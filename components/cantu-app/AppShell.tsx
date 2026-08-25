@@ -1,10 +1,20 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
+import type { AuthContext } from "@/lib/auth/types";
+import type { LibrarySnapshot } from "@/lib/data/library";
 import type { EntryMode } from "@/lib/recognition/types";
+import { AccountSection } from "./AccountSection";
 import { SongRecognitionFlow } from "./SongRecognitionFlow";
 import styles from "./app.module.css";
 
-export function AppShell({ initialMode }: { initialMode: EntryMode }) {
+type AppShellProps = {
+  initialMode: EntryMode;
+  auth: AuthContext;
+  library: LibrarySnapshot;
+  authNotice?: string;
+};
+
+export function AppShell({ initialMode, auth, library, authNotice }: AppShellProps) {
   return (
     <main className={styles.appPage}>
       <header className={styles.appHeader}>
@@ -13,7 +23,11 @@ export function AppShell({ initialMode }: { initialMode: EntryMode }) {
           Cantu
         </Link>
         <div className={styles.headerMeta}>
-          <span>Olasz → magyar</span>
+          <span>
+            {auth.status === "authenticated"
+              ? auth.user.displayName ?? auth.user.email
+              : "Olasz → magyar"}
+          </span>
           <ThemeToggle />
         </div>
       </header>
@@ -27,9 +41,10 @@ export function AppShell({ initialMode }: { initialMode: EntryMode }) {
           </p>
         </div>
         <SongRecognitionFlow initialMode={initialMode} />
+        <AccountSection auth={auth} library={library} notice={authNotice} />
       </section>
       <footer className={styles.appFooter}>
-        <span><i aria-hidden="true" /> Helyi mock élmény</span>
+        <span><i aria-hidden="true" /> Mock felismerés · biztonságos fiókalap</span>
         <Link href="/">Vissza a bemutatóhoz</Link>
       </footer>
     </main>

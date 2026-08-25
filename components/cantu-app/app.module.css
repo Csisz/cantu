@@ -783,6 +783,283 @@
   text-underline-offset: 3px;
 }
 
+.accountSection {
+  margin-top: clamp(28px, 5vw, 48px);
+  padding: clamp(26px, 5vw, 46px);
+  border: 1px solid var(--glass-line);
+  border-radius: clamp(24px, 4vw, 34px);
+  background: var(--glass);
+  box-shadow: 0 30px 76px -58px rgba(27, 33, 64, 0.68);
+  backdrop-filter: blur(18px);
+}
+
+.accountHeading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.accountHeading h2 {
+  margin-top: 10px;
+  font-size: clamp(2rem, 4vw, 3.25rem);
+}
+
+.signOutButton {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.accountNotice,
+.authNotice,
+.authError,
+.authSuccess {
+  margin-top: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.accountNotice,
+.authSuccess {
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+}
+
+.authNotice {
+  color: var(--ink-soft);
+  background: rgba(118, 104, 220, 0.08);
+}
+
+.authError {
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 9%, transparent);
+}
+
+.accountGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+  gap: clamp(24px, 5vw, 52px);
+  align-items: center;
+  margin-top: 30px;
+}
+
+.accountCopy > span,
+.libraryEmpty > span {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 16px;
+  color: var(--white);
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+  box-shadow: 0 16px 30px -22px var(--glow);
+  font-size: 1.2rem;
+  font-weight: 800;
+}
+
+.accountCopy h3,
+.libraryEmpty h3 {
+  margin-top: 18px;
+  font-size: clamp(1.45rem, 3vw, 2.2rem);
+}
+
+.accountCopy p,
+.libraryEmpty p {
+  margin-top: 12px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.authPanel {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--glass-strong);
+}
+
+.authMode {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 5px;
+  border-radius: 16px;
+  background: rgba(27, 33, 64, 0.06);
+}
+
+:global(html[data-theme="dark"]) .authMode {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.authMode button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 12px;
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.authMode button[aria-pressed="true"] {
+  color: var(--ink);
+  background: var(--glass-strong);
+  box-shadow: 0 8px 22px -18px rgba(27, 33, 64, 0.6);
+}
+
+.authPanel form {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.authPanel label {
+  display: grid;
+  gap: 7px;
+  color: var(--ink);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.authPanel label > span {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  font-weight: 600;
+}
+
+.authPanel input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 72%, transparent);
+}
+
+.authPanel input:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.authFieldError {
+  color: var(--danger);
+  font-size: 0.7rem;
+  font-weight: 650;
+}
+
+.authSubmit {
+  min-height: 48px;
+  margin-top: 2px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--white);
+  background: var(--ink);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+:global(html[data-theme="dark"]) .authSubmit {
+  color: #0b1020;
+  background: var(--white);
+}
+
+.authSubmit:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+.libraryEmpty {
+  display: flex;
+  min-height: 250px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 30px;
+  border: 1px dashed var(--line);
+  border-radius: 24px;
+  text-align: center;
+  background: linear-gradient(135deg, rgba(118, 104, 220, 0.06), rgba(63, 211, 217, 0.06));
+}
+
+.libraryList {
+  display: grid;
+  gap: 10px;
+  margin: 26px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.libraryList li {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(120px, 0.4fr);
+  align-items: center;
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--glass-strong);
+}
+
+.libraryArtwork {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: grid;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 15px;
+  color: var(--white);
+  background: linear-gradient(135deg, var(--purple), var(--cyan));
+}
+
+.libraryArtwork img {
+  object-fit: cover;
+}
+
+.libraryList strong,
+.libraryList small {
+  display: block;
+}
+
+.libraryList small {
+  margin-top: 5px;
+  color: var(--ink-soft);
+}
+
+.libraryProgress > span {
+  display: block;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: right;
+}
+
+.libraryProgress > div {
+  height: 6px;
+  overflow: hidden;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: rgba(27, 33, 64, 0.1);
+}
+
+.libraryProgress i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+}
+
 @media (max-width: 680px) {
   .appMain {
     width: min(100% - 20px, 940px);
@@ -881,6 +1158,33 @@
 
   .appFooter {
     flex-direction: column;
+  }
+
+  .accountSection {
+    padding: 24px 18px;
+    border-radius: 24px;
+  }
+
+  .accountHeading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .accountGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .libraryList li {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .libraryArtwork {
+    width: 56px;
+    height: 56px;
+  }
+
+  .libraryProgress {
+    grid-column: 1 / -1;
   }
 }
 

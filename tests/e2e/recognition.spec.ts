@@ -50,6 +50,25 @@ test("landing exposes the recognition-first three-step story", async ({ page }) 
   expect(errors.consoleErrors).toEqual([]);
 });
 
+test("authentication boundary exposes an empty library and signs out", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  await page.goto("/app");
+
+  await page.getByRole("heading", { name: "Saját dalaim" }).scrollIntoViewIfNeeded();
+  await page.getByLabel("E-mail-cím").fill("tanulo@example.com");
+  await page.getByLabel("Jelszó").fill("biztonsagos-jelszo");
+  await page.getByRole("button", { name: "Bejelentkezés" }).click();
+
+  await expect(page.getByRole("heading", { name: "Még nincs elmentett dalod." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Kijelentkezés" })).toBeVisible();
+  await page.getByRole("button", { name: "Kijelentkezés" }).click();
+  await expect(page.getByRole("button", { name: "Bejelentkezés" })).toBeVisible();
+
+  const errors = runtime();
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleErrors).toEqual([]);
+});
+
 test("wrong candidate exposes recovery actions", async ({ page }) => {
   const runtime = watchRuntime(page);
   await page.goto("/app?mode=listen");

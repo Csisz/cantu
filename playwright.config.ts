@@ -6,7 +6,7 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 2 : 0,
   reporter: "list",
-  workers: 3,
+  workers: 1,
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -19,6 +19,9 @@ export default defineConfig({
   webServer: {
     command: "npm run dev",
     url: "http://localhost:3000",
+    env: {
+      CANTU_E2E_AUTH_MOCK: "1",
+    },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,
   },
