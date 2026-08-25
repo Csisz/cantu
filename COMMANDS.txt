@@ -1,0 +1,3 @@
+$env:HF_API_KEY_ID = "2839d2ff-f083-4c11-b680-f0e41f5871a5"
+$env:HF_API_KEY_SECRET = "fd2bbab6c97bf261c88c678f0ad314544064d8102c75110804d81aa6652a09e8"
+python generate_assets.py --patch

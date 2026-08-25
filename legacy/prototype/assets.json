@@ -1,0 +1,18 @@
+{
+  "hero_idle": "assets/hero_idle.mp4",
+  "hero_idle__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/73f0fc0d-17ca-4264-9dbf-eb07ce297532.mp4",
+  "hero_sing": "assets/hero_sing.mp4",
+  "hero_sing__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/4602161c-f1c8-457b-9d54-53bb03562eea.mp4",
+  "wave_upload": "assets/wave_upload.mp4",
+  "wave_upload__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/d1b76a94-9f0c-4c00-957c-ebb8750c8571.mp4",
+  "dance_learn": "assets/dance_learn.mp4",
+  "dance_learn__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/0a900ef0-2b1d-42b4-936c-75db29210842.mp4",
+  "bg_vinyl": "assets/bg_vinyl.png",
+  "bg_vinyl__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/9f840bdc-a6f0-4a4f-8422-f590730c01c6.png",
+  "bg_waveform": "assets/bg_waveform.png",
+  "bg_waveform__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/8c6978bd-b640-4600-9c5b-07bdca916f5c.png",
+  "flags_soft": "assets/flags_soft.png",
+  "flags_soft__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/cb0b71ba-ccfe-41a5-ad96-e71644792abd.png",
+  "bg_italy": "assets/bg_italy.png",
+  "bg_italy__remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/13ac0ffb-a328-400c-ae2a-f3602897e7b2.png"
+}

@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="hu" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LyricLingo – Tanulj olaszul a kedvenc dalaidból</title>
+<meta name="description" content="Tölts fel egy dalt, mi tananyagot csinálunk belőle. Soronkénti fordítás, kulcsszavak, nyelvtani jegyzet és kvíz – zenehallgatás közben.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   0. DESIGN TOKENS
+   A robot palettájából. Sötét mód: [data-theme="dark"].
+   ============================================================ */
+:root{
+  --bg-a:#EAF0FB; --bg-b:#C9D7F5;
+  --ink:#1B2140; --ink-soft:rgba(27,33,64,.62);
+  --purple:#8F84E8; --cyan:#3FD3D9; --white:#FFFFFF;
+  --glass:rgba(255,255,255,.55); --glass-line:rgba(255,255,255,.75);
+  --glow:rgba(143,132,232,.35);
+  --font-display:"Space Grotesk",system-ui,sans-serif;
+  --font-body:"Inter",system-ui,sans-serif;
+  --radius:28px;
+  --nav-h:64px;
+}
+[data-theme="dark"]{
+  --bg-a:#0B1020; --bg-b:#141B3A;
+  --ink:#F3F5FF; --ink-soft:rgba(243,245,255,.62);
+  --glass:rgba(20,27,58,.55); --glass-line:rgba(255,255,255,.14);
+  --glow:rgba(63,211,217,.28);
+}
+
+/* ============================================================
+   1. BASE
+   ============================================================ */
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0; font-family:var(--font-body); color:var(--ink);
+  background:linear-gradient(180deg,var(--bg-a) 0%,var(--bg-b) 100%);
+  -webkit-font-smoothing:antialiased; overflow-x:hidden;
+  transition:background .5s,color .5s;
+}
+h1,h2,h3{font-family:var(--font-display); font-weight:700; letter-spacing:-.02em; margin:0; line-height:1.02}
+p{margin:0}
+a{color:inherit}
+button{font:inherit; cursor:pointer}
+img,video{display:block; max-width:100%}
+:focus-visible{outline:3px solid var(--cyan); outline-offset:3px; border-radius:6px}
+
+.eyebrow{
+  font-family:var(--font-display); font-weight:500; font-size:.8rem; letter-spacing:.18em;
+  text-transform:uppercase; color:var(--purple);
+}
+.wrap{width:min(1180px,92vw); margin-inline:auto}
+
+/* Gombok – egyetlen elsődleges stílus, nem minden sarokban */
+.btn{
+  display:inline-flex; align-items:center; gap:.6rem;
+  padding:1rem 1.6rem; border-radius:999px; border:0;
+  font-family:var(--font-display); font-weight:700; font-size:1rem;
+  color:var(--white); background:var(--ink);
+  box-shadow:0 12px 34px -12px rgba(27,33,64,.55);
+  transition:transform .25s,box-shadow .25s;
+}
+.btn:hover{transform:translateY(-2px); box-shadow:0 18px 40px -12px rgba(27,33,64,.6)}
+[data-theme="dark"] .btn{background:var(--white); color:#0B1020}
+.btn-ghost{
+  background:transparent; color:var(--ink); box-shadow:none;
+  border:1.5px solid rgba(27,33,64,.25); padding:.6rem 1.1rem; font-size:.85rem;
+}
+[data-theme="dark"] .btn-ghost{color:var(--ink); border-color:rgba(255,255,255,.25)}
+
+/* Videó-keret: minden robot-videó ebben ül, fallbackkal */
+.media{
+  position:absolute; inset:0; overflow:hidden;
+  background:radial-gradient(60% 60% at 50% 40%,rgba(255,255,255,.35),transparent 70%);
+}
+.media video,.media .fallback{position:absolute; inset:0; width:100%; height:100%; object-fit:cover}
+.media .fallback{display:none; object-fit:contain; padding:8vh 6vw}
+.media.no-video video{display:none}
+.media.no-video .fallback{display:block}
+
+/* Szekció-alap */
+section{position:relative; min-height:100svh; display:grid; place-items:center; overflow:hidden}
+.panel{position:relative; z-index:2}
+
+/* ============================================================
+   2. NAV + TÉMA KAPCSOLÓ
+   ============================================================ */
+.nav{
+  position:fixed; inset:0 0 auto 0; height:var(--nav-h); z-index:50;
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 max(4vw,20px);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+  background:linear-gradient(to bottom,rgba(234,240,251,.6),transparent);
+}
+[data-theme="dark"] .nav{background:linear-gradient(to bottom,rgba(11,16,32,.7),transparent)}
+.brand{font-family:var(--font-display); font-weight:700; font-size:1.15rem; display:flex; align-items:center; gap:.5rem; text-decoration:none}
+.brand i{width:10px; height:10px; border-radius:50%; background:linear-gradient(135deg,var(--purple),var(--cyan))}
+.theme{
+  width:52px; height:30px; border-radius:999px; border:0; position:relative;
+  background:rgba(27,33,64,.15);
+}
+[data-theme="dark"] .theme{background:rgba(255,255,255,.18)}
+.theme::after{
+  content:""; position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%;
+  background:linear-gradient(135deg,var(--purple),var(--cyan)); transition:transform .3s;
+}
+[data-theme="dark"] .theme::after{transform:translateX(22px)}
+
+/* ============================================================
+   3. HERO – robot FELÜL, szöveg alatta
+   ============================================================ */
+#hero{min-height:100svh; align-items:start}
+#hero .panel{
+  width:min(1100px,94vw); padding:calc(var(--nav-h) + 3vh) 0 10vh;
+  display:grid; grid-template-rows:auto auto; justify-items:center; text-align:center;
+}
+#hero .stage{
+  position:relative; width:min(860px,92vw); aspect-ratio:16/9; border-radius:var(--radius);
+  overflow:hidden; margin-bottom:2.2rem;
+  background:radial-gradient(70% 70% at 50% 45%,#D9E4FA,#B8CBF2 90%);
+  box-shadow:0 50px 100px -40px var(--glow), 0 0 0 1px var(--glass-line) inset;
+}
+[data-theme="dark"] #hero .stage{background:radial-gradient(70% 70% at 50% 45%,#2b3470,#141B3A 90%)}
+#hero .stage .media{position:absolute; inset:0; background:none}
+#hero .stage .fallback{padding:4% 0 0; object-fit:contain; object-position:center bottom}
+#hero .stage .halo{
+  position:absolute; left:50%; bottom:-10%; width:70%; aspect-ratio:1; transform:translateX(-50%);
+  border-radius:50%; background:radial-gradient(circle,var(--glow),transparent 65%); filter:blur(20px); z-index:0;
+}
+.hero-title{font-size:clamp(2.4rem,6.4vw,5.6rem); margin:0 auto 1rem; max-width:16ch}
+.hero-title .w{display:inline-block; will-change:transform,opacity}
+.hero-title em{font-style:normal; background:linear-gradient(90deg,var(--purple),var(--cyan)); -webkit-background-clip:text; background-clip:text; color:transparent}
+.hero-sub{font-size:clamp(1.05rem,1.6vw,1.25rem); color:var(--ink-soft); max-width:46ch; margin:0 auto 2rem; line-height:1.55}
+.scroll-hint{
+  position:absolute; bottom:22px; left:50%; transform:translateX(-50%); z-index:3;
+  display:flex; flex-direction:column; align-items:center; gap:.4rem; color:var(--ink-soft); font-size:.75rem; letter-spacing:.15em; text-transform:uppercase;
+}
+.scroll-hint span{width:1px; height:44px; background:linear-gradient(to bottom,var(--purple),transparent); animation:hint 1.8s ease-in-out infinite}
+@keyframes hint{0%,100%{transform:scaleY(.3);transform-origin:top;opacity:.4}50%{transform:scaleY(1);opacity:1}}
+
+/* Amíg nincs Higgsfield-videó: CSS "idle" – finom ringatózás a PNG-n */
+.media.no-video .fallback.sway{animation:sway 3.6s ease-in-out infinite; transform-origin:50% 100%}
+@keyframes sway{0%,100%{transform:rotate(-1.6deg) translateY(0)}50%{transform:rotate(1.6deg) translateY(-6px)}}
+
+/* ============================================================
+   4. A PROBLÉMA
+   ============================================================ */
+#problem .bg{position:absolute; inset:0; z-index:0; background-size:cover; background-position:center}
+#problem .bg::after{content:""; position:absolute; inset:0; background:rgba(11,16,32,.55)}
+#problem .panel{color:#fff; width:min(900px,92vw); padding:12vh 0}
+#problem .line{
+  font-family:var(--font-display); font-weight:700; font-size:clamp(1.9rem,5vw,4.2rem); line-height:1.1;
+  opacity:0; transform:translateX(-40px); margin:.35em 0;
+}
+#problem .line:nth-child(2){padding-left:8%}
+#problem .line:nth-child(3){padding-left:16%; color:var(--cyan)}
+
+/* ============================================================
+   5. HOGYAN MŰKÖDIK – vízszintes pin
+   ============================================================ */
+#how{display:block; padding:0}
+#how .track{display:flex; height:100svh; width:300vw}
+#how .step{
+  position:relative; width:100vw; height:100%; flex:none; display:grid; place-items:center; padding:0 8vw;
+}
+#how .step-inner{width:min(720px,84vw); position:relative; z-index:2}
+#how .step-n{font-family:var(--font-display); font-size:clamp(5rem,18vw,14rem); line-height:.8; color:transparent; -webkit-text-stroke:1.5px var(--purple); opacity:.5; margin-bottom:-.15em}
+#how h3{font-size:clamp(2rem,4.6vw,3.6rem); margin:.4em 0 .5em}
+#how p{font-size:1.15rem; color:var(--ink-soft); max-width:40ch; line-height:1.55}
+#how .step .media{inset:auto 0 0 auto; width:min(48vw,620px); height:min(60svh,560px); z-index:1; opacity:.95}
+#how .step-icon{width:56px; height:56px; margin-bottom:1rem}
+#how .step-icon path,#how .step-icon circle{stroke:var(--cyan); stroke-width:1.6; fill:none; stroke-linecap:round; stroke-linejoin:round}
+.how-progress{position:absolute; left:6vw; right:6vw; bottom:34px; height:2px; background:rgba(143,132,232,.25); z-index:3}
+.how-progress i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--purple),var(--cyan))}
+
+/* ============================================================
+   6. ÉLŐ DEMO – üvegkártya + karaoke sor (signature elem)
+   ============================================================ */
+#demo .panel{width:min(760px,92vw); padding:14vh 0}
+#demo .eyebrow{display:block; text-align:center; margin-bottom:1.4rem}
+.player{
+  border-radius:var(--radius); padding:2rem clamp(1.2rem,4vw,2.6rem) 1.6rem;
+  background:var(--glass); border:1px solid var(--glass-line);
+  backdrop-filter:blur(22px); -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 40px 90px -40px var(--glow), 0 1px 0 rgba(255,255,255,.6) inset;
+  transform:rotateX(0) translateY(0);
+}
+.player-top{display:flex; align-items:center; gap:.9rem; margin-bottom:1.6rem}
+.player-top .cover{width:46px; height:46px; border-radius:12px; background:linear-gradient(135deg,var(--purple),var(--cyan)); flex:none}
+.player-top .meta b{display:block; font-family:var(--font-display)}
+.player-top .meta span{font-size:.8rem; color:var(--ink-soft)}
+.lyric{font-family:var(--font-display); font-weight:700; font-size:clamp(1.4rem,3.6vw,2.4rem); line-height:1.25; letter-spacing:-.01em}
+.lyric .k{display:inline-block; transition:color .25s,text-shadow .25s; color:var(--ink-soft)}
+.lyric .k.on{color:var(--ink); text-shadow:0 0 18px var(--glow)}
+.lyric .chip{position:relative; cursor:default; border-bottom:2px solid var(--cyan)}
+.lyric .chip .tip{
+  position:absolute; left:50%; bottom:calc(100% + 10px); transform:translateX(-50%) translateY(6px);
+  font:500 .8rem/1.2 var(--font-body); letter-spacing:0; white-space:nowrap;
+  padding:.45rem .7rem; border-radius:10px; background:var(--ink); color:var(--white);
+  opacity:0; pointer-events:none; transition:opacity .2s,transform .2s;
+}
+[data-theme="dark"] .lyric .chip .tip{background:var(--white); color:#0B1020}
+.lyric .chip:hover .tip,.lyric .chip:focus-within .tip{opacity:1; transform:translateX(-50%) translateY(0)}
+.translation{margin-top:.8rem; font-size:1.05rem; color:var(--ink-soft); line-height:1.5}
+.chips{display:flex; flex-wrap:wrap; gap:.5rem; margin:1.4rem 0 1.6rem}
+.chips button{
+  border:1px solid var(--glass-line); background:rgba(255,255,255,.35); color:var(--ink);
+  padding:.45rem .8rem; border-radius:999px; font-size:.85rem;
+}
+[data-theme="dark"] .chips button{background:rgba(255,255,255,.06)}
+.chips button b{color:var(--purple)}
+.progress{height:4px; border-radius:999px; background:rgba(27,33,64,.12); overflow:hidden}
+[data-theme="dark"] .progress{background:rgba(255,255,255,.12)}
+.progress i{display:block; height:100%; width:0; background:linear-gradient(90deg,var(--purple),var(--cyan))}
+.times{display:flex; justify-content:space-between; font-size:.72rem; color:var(--ink-soft); margin-top:.5rem; font-variant-numeric:tabular-nums}
+
+/* ============================================================
+   7. MIT KAPSZ – nagy sorok, nem rács
+   ============================================================ */
+#features .bg{position:absolute; inset:0; z-index:0; background-size:cover; background-position:center}
+#features .bg::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(11,16,32,.35),rgba(11,16,32,.75))}
+#features .panel{color:#fff; width:min(1100px,92vw); padding:14vh 0}
+#features .eyebrow{color:var(--cyan)}
+.row{
+  display:grid; grid-template-columns:auto 1fr; gap:1.2rem 2rem; align-items:baseline;
+  padding:1.6rem 0; border-top:1px solid rgba(255,255,255,.18);
+  opacity:0; transform:translateY(40px);
+}
+.row:last-child{border-bottom:1px solid rgba(255,255,255,.18)}
+.row .n{font-family:var(--font-display); font-size:.9rem; letter-spacing:.15em; color:var(--cyan); padding-top:.5rem}
+.row h3{font-size:clamp(1.8rem,4.6vw,3.6rem)}
+.row p{grid-column:2; color:rgba(255,255,255,.7); max-width:52ch; line-height:1.55}
+
+/* ============================================================
+   8. NYELVEK
+   ============================================================ */
+#langs .bg{position:absolute; inset:0; z-index:0; background-size:cover; background-position:center; opacity:.9}
+#langs .panel{width:min(1000px,92vw); padding:14vh 0; text-align:center}
+#langs h2{font-size:clamp(2rem,5vw,4rem); margin:.4em 0 1.6em}
+.lang-list{display:flex; flex-direction:column; gap:.9rem; align-items:stretch}
+.lang{
+  display:flex; align-items:center; justify-content:space-between; gap:1rem;
+  padding:1.2rem 1.6rem; border-radius:20px; background:var(--glass); border:1px solid var(--glass-line);
+  backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px); text-align:left;
+}
+.lang b{font-family:var(--font-display); font-size:1.4rem}
+.lang small{display:block; color:var(--ink-soft); font-size:.85rem; margin-top:.15rem}
+.lang.soon{opacity:.55}
+.lang .tag{font-size:.75rem; letter-spacing:.12em; text-transform:uppercase; color:var(--cyan); font-weight:600}
+
+/* ============================================================
+   9. ZÁRÓ CTA + LÁBLÉC
+   ============================================================ */
+#cta .bg{position:absolute; inset:0; z-index:0; background:url("robot_meadow.png") center/cover no-repeat; transform:scale(1.08)}
+#cta .bg::after{content:""; position:absolute; inset:0; background:linear-gradient(180deg,rgba(234,240,251,0) 35%,rgba(234,240,251,.92) 75%)}
+[data-theme="dark"] #cta .bg::after{background:linear-gradient(180deg,rgba(11,16,32,.15) 30%,rgba(11,16,32,.92) 75%)}
+#cta .dance{position:absolute; right:6vw; bottom:24vh; width:min(34vw,420px); aspect-ratio:16/9; border-radius:20px; overflow:hidden; z-index:2; box-shadow:0 30px 60px -30px var(--glow)}
+#cta .dance .media{background:none}
+#cta .dance.no-video{display:none}
+#cta .panel{text-align:center; width:min(760px,92vw); padding:52vh 0 12vh}
+@media (max-width:900px){#cta .dance{display:none}}
+#cta h2{font-size:clamp(2.6rem,7vw,6rem); margin-bottom:.5em}
+#cta p{color:var(--ink-soft); margin-bottom:2rem; font-size:1.1rem}
+.signup{display:flex; gap:.6rem; justify-content:center; flex-wrap:wrap}
+.signup input{
+  flex:1 1 260px; max-width:360px; padding:1rem 1.2rem; border-radius:999px; font:inherit; font-size:1rem;
+  border:1.5px solid var(--glass-line); background:var(--glass); color:var(--ink);
+  backdrop-filter:blur(10px);
+}
+.signup input::placeholder{color:var(--ink-soft)}
+.signup .ok{margin-top:1rem; font-size:.9rem; color:var(--cyan); font-weight:600; min-height:1.2em}
+footer{
+  position:relative; z-index:2; display:flex; justify-content:space-between; flex-wrap:wrap; gap:.8rem;
+  padding:1.6rem max(4vw,20px); font-size:.8rem; color:var(--ink-soft);
+}
+footer nav{display:flex; gap:1.2rem}
+footer a{text-decoration:none}
+footer a:hover{color:var(--ink)}
+
+/* ============================================================
+   10. REDUCED MOTION + MOBIL
+   ============================================================ */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important; transition:none!important; scroll-behavior:auto!important}
+  #problem .line,.row{opacity:1; transform:none}
+  .media.no-video .fallback.sway{animation:none}
+  #how .track{width:100vw; flex-direction:column; height:auto}
+  #how .step{width:100vw; height:auto; min-height:70svh; padding:12vh 8vw}
+}
+@media (max-width:720px){
+  #how .step .media{width:100vw; height:38svh; opacity:.5}
+  #how .step-n{opacity:.3}
+  .row{grid-template-columns:1fr}
+  .row p{grid-column:1}
+  .lang{flex-direction:column; align-items:flex-start}
+  .hero-title{max-width:12ch}
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     ASSETS – az 1. fázis (Higgsfield) URL-jei ide kerülnek.
+     Üres string = elegáns fallback (gradiens + robot.png).
+     ============================================================ -->
+<script>
+window.LL_ASSETS = {
+  hero_idle:   "assets/hero_idle.mp4",   // 16:9 mp4 – robot ringatózik
+  hero_sing:   "assets/hero_sing.mp4",   // 16:9 mp4 – robot énekel (A/B teszthez)
+  wave_upload: "assets/wave_upload.mp4",   // 16:9 mp4 – robot integet, felfelé mutat
+  dance_learn: "assets/dance_learn.mp4",   // 16:9 mp4 – robot táncol
+  bg_italy:    "assets/bg_italy.png",   // 16:9 jpg – olasz utca (tartalék, jelenleg nem használt szekció)
+  bg_vinyl:    "assets/bg_vinyl.png",   // 16:9 jpg – vinyl
+  bg_waveform: "assets/bg_waveform.png",   // 16:9 jpg – hullámforma
+  flags_soft:  "assets/flags_soft.png",   // 16:9 jpg – bokeh zászlók
+  robot_png:   "robot.png",
+  robot_meadow:"robot_meadow.png"
+};
+</script>
+
+<!-- ============================================================
+     NAV
+     ============================================================ -->
+<header class="nav">
+  <a class="brand" href="#hero" aria-label="LyricLingo – kezdőlap"><i></i>LyricLingo</a>
+  <button class="theme" id="themeBtn" aria-label="Világos / sötét mód váltása" aria-pressed="false"></button>
+</header>
+
+<!-- ============================================================
+     1. HERO
+     ============================================================ -->
+<section id="hero" aria-labelledby="hero-title">
+  <div class="panel">
+    <div class="stage">
+      <div class="halo" aria-hidden="true"></div>
+      <div class="media" data-asset="hero_idle">
+        <video autoplay muted loop playsinline preload="metadata" poster="robot.png"></video>
+        <img class="fallback sway" src="robot.png" alt="LyricLingo éneklő robot-kabala mikrofonnal és fejhallgatóval" width="1448" height="1086" fetchpriority="high">
+      </div>
+    </div>
+    <div class="copy">
+      <span class="eyebrow">Zenés nyelvtanulás</span>
+      <h1 class="hero-title" id="hero-title" data-split>Tanulj olaszul a <em>kedvenc dalaidból.</em></h1>
+      <p class="hero-sub">Tölts fel egy számot – mi tananyagot csinálunk belőle, te pedig zenehallgatás közben tanulsz.</p>
+      <a class="btn" href="#cta">Kipróbálom ingyen
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </a>
+    </div>
+  </div>
+  <div class="scroll-hint" aria-hidden="true">görgess<span></span></div>
+</section>
+
+<!-- ============================================================
+     2. A PROBLÉMA
+     ============================================================ -->
+<section id="problem" aria-label="Miért érdemes dalból tanulni">
+  <div class="bg" data-bg="bg_vinyl" style="background-image:radial-gradient(70% 70% at 30% 40%,#2a2f6b,#0B1020)"></div>
+  <div class="panel">
+    <p class="line">Szótárfüzet unalmas.</p>
+    <p class="line">A dalszöveget úgyis dúdolod.</p>
+    <p class="line">Miért ne értenéd is?</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     3. HOGYAN MŰKÖDIK – vízszintes, pin
+     ============================================================ -->
+<section id="how" aria-label="Hogyan működik">
+  <div class="track">
+    <div class="step">
+      <div class="step-inner">
+        <svg class="step-icon" viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="18"/><path d="M6 24h36M24 6c6 6 6 30 0 36M24 6c-6 6-6 30 0 36"/></svg>
+        <div class="step-n" aria-hidden="true">1</div>
+        <h3>Válassz nyelvet</h3>
+        <p>Most olasz. Hamarosan angol, német és francia – a te tempódban, a te zenéddel.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="media" data-asset="wave_upload">
+        <video muted loop playsinline preload="none" poster="robot.png"></video>
+        <img class="fallback" src="robot.png" alt="" loading="lazy" width="1448" height="1086">
+      </div>
+      <div class="step-inner">
+        <svg class="step-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M24 34V12M14 22l10-10 10 10M8 36v4h32v-4"/></svg>
+        <div class="step-n" aria-hidden="true">2</div>
+        <h3>Töltsd fel a dalt</h3>
+        <p>MP3 vagy bármilyen hangfájl. Az AI átírja a szöveget és pár perc alatt kész a lecke.</p>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-inner">
+        <svg class="step-icon" viewBox="0 0 48 48" aria-hidden="true"><path d="M8 14h32M8 24h20M8 34h26"/><circle cx="38" cy="30" r="5"/></svg>
+        <div class="step-n" aria-hidden="true">3</div>
+        <h3>Tanulj a szövegből</h3>
+        <p>A sor akkor világít, amikor hallod. Fordítás, kulcsszavak, nyelvtan és kvíz – egy helyen.</p>
+      </div>
+    </div>
+  </div>
+  <div class="how-progress" aria-hidden="true"><i id="howBar"></i></div>
+</section>
+
+<!-- ============================================================
+     4. ÉLŐ DEMO
+     ============================================================ -->
+<section id="demo" aria-labelledby="demo-title">
+  <div class="panel">
+    <span class="eyebrow" id="demo-title">Így néz ki tanulás közben</span>
+    <div class="player" id="player">
+      <div class="player-top">
+        <div class="cover" aria-hidden="true"></div>
+        <div class="meta"><b>Sotto le stelle</b><span>példadal · olasz → magyar</span></div>
+      </div>
+
+      <p class="lyric" lang="it" id="lyric">
+        <span class="k">Sotto</span> <span class="k">le</span>
+        <span class="k chip" tabindex="0">stelle<span class="tip">csillagok</span></span>
+        <span class="k chip" tabindex="0">canto<span class="tip">énekelek</span></span>
+        <span class="k">il</span> <span class="k">tuo</span>
+        <span class="k chip" tabindex="0">nome<span class="tip">név</span></span>
+      </p>
+      <p class="translation">A csillagok alatt a nevedet énekelem.</p>
+
+      <div class="chips" aria-label="Kulcsszavak">
+        <button type="button"><b>stelle</b> · csillagok</button>
+        <button type="button"><b>canto</b> · énekelek</button>
+        <button type="button"><b>nome</b> · név</button>
+      </div>
+
+      <div class="progress" aria-hidden="true"><i id="demoBar"></i></div>
+      <div class="times" aria-hidden="true"><span id="tNow">0:00</span><span>3:42</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     5. MIT KAPSZ
+     ============================================================ -->
+<section id="features" aria-labelledby="feat-title">
+  <div class="bg" data-bg="bg_waveform" style="background-image:linear-gradient(160deg,#141B3A,#0B1020 60%,#1d1650)"></div>
+  <div class="panel">
+    <span class="eyebrow" id="feat-title">Mit kapsz egy dalból</span>
+    <div class="rows">
+      <div class="row"><span class="n">SOR</span><h3>Soronkénti fordítás</h3><p>Minden sor magyarul is, pont akkor, amikor elhangzik. Nem kell megállítani a zenét.</p></div>
+      <div class="row"><span class="n">SZÓ</span><h3>Kulcsszó-kártyák</h3><p>A dal 10–15 legfontosabb szava, példamondattal magából a számból.</p></div>
+      <div class="row"><span class="n">SZABÁLY</span><h3>Nyelvtani jegyzet</h3><p>Rövid, a szövegből induló magyarázat: miért „canto” és nem „cantare”.</p></div>
+      <div class="row"><span class="n">TESZT</span><h3>Kvíz a dal végén</h3><p>Öt gyors kérdés a szöveg alapján. Ha menne, jön a következő dal.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     6. NYELVEK
+     ============================================================ -->
+<section id="langs" aria-labelledby="langs-title">
+  <div class="bg" data-bg="flags_soft" style="background-image:radial-gradient(40% 50% at 15% 50%,rgba(0,140,69,.25),transparent),radial-gradient(40% 50% at 40% 50%,rgba(1,33,105,.22),transparent),radial-gradient(40% 50% at 65% 50%,rgba(255,206,0,.22),transparent),radial-gradient(40% 50% at 90% 50%,rgba(239,65,53,.2),transparent)"></div>
+  <div class="panel">
+    <span class="eyebrow">Nyelvek</span>
+    <h2 id="langs-title">Olasszal indulunk.</h2>
+    <div class="lang-list">
+      <div class="lang"><div><b>Olasz</b><small>Magyar anyanyelvűeknek</small></div><span class="tag">Elérhető</span></div>
+      <div class="lang soon"><div><b>Angol</b><small>Hamarosan</small></div><button class="btn btn-ghost" type="button" data-notify="angol">Értesíts</button></div>
+      <div class="lang soon"><div><b>Német</b><small>Hamarosan</small></div><button class="btn btn-ghost" type="button" data-notify="német">Értesíts</button></div>
+      <div class="lang soon"><div><b>Francia</b><small>Hamarosan</small></div><button class="btn btn-ghost" type="button" data-notify="francia">Értesíts</button></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================================================
+     7. ZÁRÓ CTA + LÁBLÉC
+     ============================================================ -->
+<section id="cta" aria-labelledby="cta-title">
+  <div class="bg" id="ctaBg" role="img" aria-label="A LyricLingo robot egy virágos réten énekel"></div>
+  <div class="dance">
+    <div class="media" data-asset="dance_learn">
+      <video muted loop playsinline preload="none" poster="robot.png"></video>
+      <img class="fallback" src="robot.png" alt="" loading="lazy" width="1448" height="1086">
+    </div>
+  </div>
+  <div class="panel">
+    <h2 id="cta-title">Az első dalod ingyen.</h2>
+    <p>Iratkozz fel a korai hozzáférésre – szólunk, amint a helyed megvan.</p>
+    <form class="signup" id="signup" novalidate>
+      <label for="email" class="sr-only" style="position:absolute;left:-9999px">E-mail cím</label>
+      <input id="email" type="email" name="email" placeholder="te@email.hu" autocomplete="email" required>
+      <button class="btn" type="submit">Kérem a korai hozzáférést</button>
+    </form>
+    <p class="ok" id="signupMsg" aria-live="polite"></p>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 LyricLingo</span>
+  <nav aria-label="Jogi információk"><a href="#">ÁSZF</a><a href="#">Adatvédelem</a></nav>
+</footer>
+
+<!-- ============================================================
+     SCRIPTS – GSAP + ScrollTrigger (cdnjs)
+     ============================================================ -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script>
+(function(){
+  "use strict";
+  const A = window.LL_ASSETS;
+  const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- Téma ---------- */
+  const root = document.documentElement, themeBtn = document.getElementById("themeBtn");
+  const saved = (()=>{ try{ return localStorage.getItem("ll-theme"); }catch(e){ return null; } })();
+  if (saved) root.dataset.theme = saved;
+  else if (window.matchMedia("(prefers-color-scheme: dark)").matches) root.dataset.theme = "dark";
+  const syncTheme = () => themeBtn.setAttribute("aria-pressed", root.dataset.theme === "dark");
+  syncTheme();
+  themeBtn.addEventListener("click", () => {
+    root.dataset.theme = root.dataset.theme === "dark" ? "light" : "dark";
+    try{ localStorage.setItem("ll-theme", root.dataset.theme); }catch(e){}
+    syncTheme();
+  });
+
+  /* ---------- Assetek bekötése + fallback + lazy videó ---------- */
+  document.querySelectorAll(".media[data-asset]").forEach(box => {
+    const url = A[box.dataset.asset], v = box.querySelector("video");
+    const off = () => { box.classList.add("no-video"); box.closest(".dance")?.classList.add("no-video"); };
+    if (!url || reduce) { off(); return; }
+    v.addEventListener("error", off, { once:true });
+    const io = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) { if (!v.src) { v.src = url; v.load(); } v.play().catch(()=>{}); }
+        else if (v.src) v.pause();
+      });
+    }, { rootMargin:"40% 0px" });
+    io.observe(box);
+  });
+  document.querySelectorAll(".bg[data-bg]").forEach(bg => {
+    const url = A[bg.dataset.bg]; if (!url) return;
+    const img = new Image();
+    img.onload = () => { bg.style.backgroundImage = `url("${url}")`; };
+    img.src = url;
+  });
+
+  /* ---------- Hero cím szavakra bontása ---------- */
+  const title = document.querySelector("[data-split]");
+  title.innerHTML = title.innerHTML.replace(/(<em>)?([^<\s]+)(<\/em>)?/g, (m, o, w, c) =>
+    (o||"") + '<span class="w">' + w + '</span>' + (c||""));
+
+  /* ---------- Feliratkozás + Értesíts (demó) ---------- */
+  const form = document.getElementById("signup"), msg = document.getElementById("signupMsg");
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const email = form.email.value.trim();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { msg.textContent = "Ez az e-mail cím nem tűnik jónak – nézd meg még egyszer."; return; }
+    msg.textContent = "Megvan. Az első dalod hamarosan érkezik. ✓";
+    form.reset();
+  });
+  document.querySelectorAll("[data-notify]").forEach(b => b.addEventListener("click", () => {
+    b.textContent = "Szólunk ✓"; b.disabled = true;
+  }));
+
+  /* ---------- Karaoke sor (demo) – scroll-vezérelt ---------- */
+  const words = [...document.querySelectorAll("#lyric .k")];
+  const demoBar = document.getElementById("demoBar"), tNow = document.getElementById("tNow");
+  const setDemo = p => {
+    const on = Math.round(p * words.length);
+    words.forEach((w,i) => w.classList.toggle("on", i < on));
+    demoBar.style.width = (p*100).toFixed(1) + "%";
+    const s = Math.round(p * 222); tNow.textContent = Math.floor(s/60) + ":" + String(s%60).padStart(2,"0");
+  };
+
+  if (reduce || !window.gsap) { setDemo(1); document.getElementById("howBar").style.width="100%"; return; }
+  gsap.registerPlugin(ScrollTrigger);
+
+  /* ---------- 1. Hero: zoom + cím szétszóródik ---------- */
+  gsap.timeline({ scrollTrigger:{ trigger:"#hero", start:"top top", end:"bottom top", scrub:1, pin:true, pinSpacing:false } })
+    .to("#hero .stage", { scale:1.12, y:-40, ease:"none" }, 0)
+    .to("#hero .w", { y:(i)=> 60 + (i*13 % 90), x:(i)=> (i%2? 1:-1) * (30 + i*9), rotate:(i)=> (i%2? 1:-1)*(4+i), opacity:0, stagger:.03, ease:"power2.in" }, 0)
+    .to("#hero .eyebrow, #hero .hero-sub, #hero .btn, .scroll-hint", { opacity:0, y:30, ease:"none" }, 0);
+
+  /* ---------- 2. Probléma: sorok beúsznak ---------- */
+  gsap.timeline({ scrollTrigger:{ trigger:"#problem", start:"top top", end:"+=140%", scrub:.8, pin:true } })
+    .to("#problem .line", { opacity:1, x:0, stagger:.5, ease:"power3.out" })
+    .to("#problem .bg", { scale:1.08, ease:"none" }, 0);
+
+  /* ---------- 3. Hogyan működik: vízszintes ---------- */
+  const track = document.querySelector("#how .track");
+  const howTween = gsap.to(track, {
+    x: () => -(track.scrollWidth - window.innerWidth), ease:"none",
+    scrollTrigger:{ trigger:"#how", start:"top top", end:() => "+=" + (track.scrollWidth - window.innerWidth), scrub:1, pin:true, invalidateOnRefresh:true,
+      onUpdate:self => { document.getElementById("howBar").style.width = (self.progress*100)+"%"; } }
+  });
+  document.querySelectorAll("#how .step-inner").forEach(el => {
+    gsap.from(el, { y:60, opacity:0, ease:"power2.out",
+      scrollTrigger:{ trigger:el, containerAnimation:howTween, start:"left 80%", end:"left 45%", scrub:true } });
+  });
+
+  /* ---------- 4. Demo: kártya lebeg, sor kigyullad, progress halad ---------- */
+  gsap.from("#player", { y:80, rotateX:8, opacity:0, transformPerspective:900, ease:"power2.out",
+    scrollTrigger:{ trigger:"#demo", start:"top 70%", end:"top 25%", scrub:true } });
+  ScrollTrigger.create({ trigger:"#demo", start:"top top", end:"+=120%", pin:true, scrub:true,
+    onUpdate:self => setDemo(self.progress) });
+
+  /* ---------- 5. Feature-sorok egymás után ---------- */
+  gsap.timeline({ scrollTrigger:{ trigger:"#features", start:"top top", end:"+=160%", scrub:.8, pin:true } })
+    .to(".row", { opacity:1, y:0, stagger:.45, ease:"power2.out" })
+    .to("#features .bg", { yPercent:-8, ease:"none" }, 0);
+
+  /* ---------- 6. Nyelvek: finom parallax ---------- */
+  gsap.from(".lang", { y:40, opacity:0, stagger:.12, ease:"power2.out",
+    scrollTrigger:{ trigger:"#langs", start:"top 65%", end:"top 20%", scrub:true } });
+
+  /* ---------- 7. CTA: robot zoomol be ---------- */
+  gsap.to("#ctaBg", { scale:1, yPercent:-4, ease:"none",
+    scrollTrigger:{ trigger:"#cta", start:"top bottom", end:"bottom bottom", scrub:true } });
+
+  window.addEventListener("load", () => ScrollTrigger.refresh());
+})();
+</script>
+</body>
+</html>
