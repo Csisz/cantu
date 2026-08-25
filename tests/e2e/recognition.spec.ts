@@ -13,13 +13,13 @@ function watchRuntime(page: Page) {
 test("landing to confirmed mocked Listen flow", async ({ page }) => {
   const runtime = watchRuntime(page);
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Tanulj olaszul a kedvenc dalaidból/i })).toBeVisible();
+  const hero = page.getByRole("region", {
+    name: /Tanulj olaszul a kedvenc dalaidból/i,
+  });
+  await expect(hero).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-  const firstStep = page.getByRole("heading", { name: "Hallgasd meg vagy töltsd fel" });
-  await firstStep.scrollIntoViewIfNeeded();
-  await expect(firstStep).toBeVisible();
 
-  await page.getByRole("link", { name: "Hallgasd meg" }).first().click();
+  await hero.getByRole("link", { name: "Hallgasd meg" }).click();
   await expect(page).toHaveURL(/\/app\?mode=listen/);
   await expect(page.getByRole("heading", { name: /Játssz le kb. 10 másodpercet/i })).toBeVisible();
   await page.getByRole("button", { name: /Mock hallgatás indítása/i }).click();
@@ -29,6 +29,20 @@ test("landing to confirmed mocked Listen flow", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Dal megerősítve" })).toHaveCount(0);
   await page.getByRole("button", { name: "Igen, ez az" }).click();
   await expect(page.getByRole("heading", { name: "Dal megerősítve" })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+  const errors = runtime();
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleErrors).toEqual([]);
+});
+
+test("landing exposes the recognition-first three-step story", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  await page.goto("/");
+  const firstStep = page.getByRole("heading", { name: "Hallgasd meg vagy töltsd fel" });
+
+  await firstStep.scrollIntoViewIfNeeded();
+  await expect(firstStep).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
 
   const errors = runtime();
