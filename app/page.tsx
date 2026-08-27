@@ -4,9 +4,9 @@ import { Footer } from "@/components/landing/Footer";
 import { Header } from "@/components/landing/Header";
 import { Hero } from "@/components/landing/Hero";
 import { HowItWorks } from "@/components/landing/HowItWorks";
-import { KaraokeDemo } from "@/components/landing/KaraokeDemo";
 import { LanguagePositioning } from "@/components/landing/LanguagePositioning";
 import { ProblemStatement } from "@/components/landing/ProblemStatement";
+import { SourceDemo } from "@/components/landing/SourceDemo";
 import styles from "@/components/landing/landing.module.css";
 
 export default function LandingPage() {
@@ -16,7 +16,7 @@ export default function LandingPage() {
       <Hero />
       <ProblemStatement />
       <HowItWorks />
-      <KaraokeDemo />
+      <SourceDemo />
       <Features />
       <LanguagePositioning />
       <FinalCta />

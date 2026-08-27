@@ -84,13 +84,15 @@ a {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
 }
 
 button,
 a,
 input,
+textarea,
 label {
   -webkit-tap-highlight-color: transparent;
 }

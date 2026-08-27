@@ -3,12 +3,12 @@ import styles from "./landing.module.css";
 
 export function ProblemStatement() {
   return (
-    <section id="miert-dalok" className={styles.problem} aria-label="Miért érdemes dalból tanulni">
+    <section id="miert-cantu" className={styles.problem} aria-label="Miért segít a saját forrásból tanulás">
       <div className={styles.problemBackdrop} aria-hidden="true" />
       <div className={styles.problemLines}>
-        <Reveal as="p">A szótárfüzet elfelejtődik.</Reveal>
-        <Reveal as="p">A refrént úgyis dúdolod.</Reveal>
-        <Reveal as="p">Miért ne értenéd is?</Reveal>
+        <Reveal as="p">Egy mondat megakad a füledben.</Reveal>
+        <Reveal as="p">Egy üzenet nem hagy nyugodni.</Reveal>
+        <Reveal as="p">Most már tényleg megértheted.</Reveal>
       </div>
     </section>
   );

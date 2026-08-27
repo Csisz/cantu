@@ -7,10 +7,10 @@ export function LanguagePositioning() {
       <div className={styles.languageImage} aria-hidden="true" />
       <Reveal className={styles.languageCard}>
         <span className={styles.eyebrow}>Egyetlen párosítás, jól megcsinálva</span>
-        <h2 id="language-title">Olasz dal. Magyar magyarázat.</h2>
+        <h2 id="language-title">Olasz forrás. Magyar magyarázat.</h2>
         <p>
-          A Cantu első változata kifejezetten magyar anyanyelvű olasztanulóknak készül. Nincs
-          nyelvválasztó útvesztő: a kedvenc olasz dalod az indulópont.
+          A Cantu első változata kifejezetten magyar anyanyelvű olasztanulóknak készül.
+          Nincs nyelvválasztó útvesztő: az olasz, amivel tényleg találkozol, az indulópont.
         </p>
         <div className={styles.languagePair} aria-label="Olasz tanulási nyelv, magyar magyarázat">
           <span><b>IT</b> olasz</span>

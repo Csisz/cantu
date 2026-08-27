@@ -13,8 +13,8 @@ export function Header() {
         <a className={styles.navLink} href="#hogyan-mukodik">
           Hogyan működik?
         </a>
-        <a className={styles.navLink} href="#dalbol-lecke">
-          Dalból lecke
+        <a className={styles.navLink} href="#forrasbol-tanulas">
+          Mit kapsz?
         </a>
         <Link className={styles.navCta} href="/app?mode=listen">
           Kezdés

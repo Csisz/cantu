@@ -24,25 +24,25 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     metadataBase: new URL(origin),
     title: {
-      default: "Cantu — Tanulj olaszul dalokból",
+      default: "Cantu — Értsd meg az olaszt, amivel találkozol",
       template: "%s — Cantu",
     },
     description:
-      "Hallgass vagy tölts fel egy olasz dalt, erősítsd meg a találatot, és készülj a zenés nyelvtanulásra.",
+      "Hozz egy rövid olasz hangrészletet vagy szöveget, ellenőrizd a forrást, majd alakítsd tanulási pillanattá.",
     applicationName: "Cantu",
     openGraph: {
-      title: "Cantu — Tanulj olaszul a kedvenc dalaidból",
-      description: "Hallgasd. Ismerd fel. Értsd meg. Tanuld meg.",
+      title: "Cantu — Értsd meg az olaszt, amivel találkozol",
+      description: "Hallgasd. Olvasd. Értsd meg. Mondd ki.",
       type: "website",
       locale: "hu_HU",
       siteName: "Cantu",
-      images: [{ url: `${origin}/og.png`, width: 1731, height: 909, alt: "Cantu — zenés olasztanulás" }],
+      images: [{ url: `${origin}/og-byoc.png`, width: 1731, height: 909, alt: "Cantu — valódi olasz, érthetően" }],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Cantu — Tanulj olaszul dalokból",
-      description: "Hallgasd. Ismerd fel. Értsd meg. Tanuld meg.",
-      images: [`${origin}/og.png`],
+      title: "Cantu — Értsd meg az olaszt, amivel találkozol",
+      description: "Hallgasd. Olvasd. Értsd meg. Mondd ki.",
+      images: [`${origin}/og-byoc.png`],
     },
   };
 }

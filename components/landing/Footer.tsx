@@ -8,10 +8,11 @@ export function Footer() {
         <span className={styles.brandDot} aria-hidden="true" />
         Cantu
       </Link>
-      <p>© 2026 Cantu · Olasz dalok, magyar füleknek.</p>
+      <p>© 2026 Cantu · Valódi olasz, érthetően.</p>
       <nav aria-label="Lábléc navigáció">
         <Link href="/app?mode=listen">Hallgatás</Link>
-        <Link href="/app?mode=upload">Feltöltés</Link>
+        <Link href="/app?mode=audio">Hangfájl</Link>
+        <Link href="/app?mode=text">Szöveg</Link>
       </nav>
     </footer>
   );

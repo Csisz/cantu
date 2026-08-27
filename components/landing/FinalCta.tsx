@@ -16,12 +16,13 @@ export function FinalCta() {
         fit="cover"
       />
       <Reveal className={styles.finalPanel}>
-        <span className={styles.eyebrow}>Az első dal itt kezdődik</span>
-        <h2 id="final-title">Mit dúdolsz ma?</h2>
-        <p>Hozd a dalt hallgatással vagy egy helyi hangfájllal. A találatot mindig te erősíted meg.</p>
+        <span className={styles.eyebrow}>A következő „aha” pillanat itt kezdődik</span>
+        <h2 id="final-title">Melyik olasz mondatot hozod?</h2>
+        <p>Hallgasd meg, nyisd meg helyi hangfájlként, vagy írd be. A pontos forrást mindig te erősíted meg.</p>
         <div className={styles.heroActions}>
-          <Link className={styles.primaryButton} href="/app?mode=listen">🎧 Hallgasd meg</Link>
-          <Link className={styles.secondaryButton} href="/app?mode=upload">⬆️ Feltöltöm a dalt</Link>
+          <Link className={styles.primaryButton} href="/app?mode=listen">🎧 Hallgasd</Link>
+          <Link className={styles.secondaryButton} href="/app?mode=audio">🎵 Hangfájl</Link>
+          <Link className={styles.secondaryButton} href="/app?mode=text">📝 Szöveg</Link>
         </div>
       </Reveal>
     </section>

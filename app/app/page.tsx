@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import { AppShell } from "@/components/cantu-app/AppShell";
 import { getAuthContext } from "@/lib/data/auth";
 import { getLibrarySnapshot } from "@/lib/data/library";
-import type { EntryMode } from "@/lib/recognition/types";
+import type { InputMode } from "@/lib/input/types";
 
 export const metadata: Metadata = {
-  title: "Dal felismerése",
-  description: "Hozz be egy olasz dalt hallgatással vagy helyi hangfájllal.",
+  title: "Input Studio",
+  description: "Hozz egy rövid olasz hangrészletet vagy szöveget, és jelöld ki pontosan, mit szeretnél megérteni.",
 };
 
 type AppPageProps = {
@@ -19,7 +19,8 @@ type AppPageProps = {
 export default async function AppPage({ searchParams }: AppPageProps) {
   const params = await searchParams;
   const requestedMode = Array.isArray(params.mode) ? params.mode[0] : params.mode;
-  const initialMode: EntryMode = requestedMode === "upload" ? "upload" : "listen";
+  const initialMode: InputMode =
+    requestedMode === "audio" || requestedMode === "text" ? requestedMode : "listen";
   const authResult = Array.isArray(params.auth) ? params.auth[0] : params.auth;
   const authNotice =
     authResult === "confirmed"

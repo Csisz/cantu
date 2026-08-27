@@ -91,7 +91,7 @@ export function AuthPanel({ configured }: { configured: boolean }) {
         {!configured ? (
           <p className={styles.authNotice} role="status">
             A fiókok helyi vagy cloud Supabase konfiguráció után kapcsolhatók be.
-            A fenti dalbemutató ettől függetlenül használható.
+            A fenti helyi Input Studio ettől függetlenül használható.
           </p>
         ) : null}
 

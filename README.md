@@ -1,6 +1,10 @@
 # Cantu
 
-Cantu egy zene-központú nyelvtanuló alkalmazás magyar anyanyelvű olasztanulóknak.
+Cantu egy Bring Your Own Content nyelvtanuló alkalmazás magyar anyanyelvű olasztanulóknak. Rövid, valódi olasz hang- vagy szövegforrásból épít majd megértési és gyakorlási útvonalat.
+
+> **Hallgasd. Olvasd. Értsd meg. Mondd ki.**
+
+A `Cantu_Project_Sources_v3_BYOC` forráscsomag felülírja a régebbi, dal- és dalszöveg-központú dokumentációt, ahol a két irány ütközik.
 
 ## Előfeltételek
 
@@ -19,10 +23,18 @@ npm run dev
 Az alkalmazás fő útvonalai:
 
 - `/` — marketingoldal;
-- `/app` — mock dalfelismerés, fiókbelépés és a saját dalok alapja;
+- `/app` — helyi Input Studio (Listen / Hangfájl / Szöveg), fiókbelépés és a személyes tanulási tér alapja;
 - `/auth/confirm` — Supabase e-mail-megerősítési végpont.
 
-Supabase-konfiguráció nélkül a landing és a teljes mock Listen/Upload bemutató továbbra is működik. A fiók- és perzisztenciafelület ilyenkor biztonságos konfigurálatlan állapotot mutat.
+Supabase-konfiguráció nélkül a landing és a teljes helyi Input Studio továbbra is működik. A fiók- és perzisztenciafelület ilyenkor biztonságos konfigurálatlan állapotot mutat.
+
+## Milestone 2 működési határa
+
+- A hangfájl dekódolása, hullámformája, legfeljebb 30 másodperces kijelölése és előnézete kizárólag a böngészőben történik.
+- A teljes hangfájlt az Input Studio nem tölti fel, és a kijelölt részletet sem küldi el ebben a mérföldkőben.
+- A szöveges forrás legfeljebb 2 000 karakter; a megerősítési és tanulási vázlat UI-helyi, nincs AI-elemzés vagy automatikus mentés.
+- A Listen mód egy biztonságos interakciós előnézet: valós mikrofonrögzítés még nincs.
+- Valós STT, LLM-alapú tanulási elemzés, audio Storage és általánosított perzisztencia későbbi mérföldkő feladata.
 
 ## Környezeti változók
 
@@ -70,6 +82,6 @@ npm run db:test
 
 Az E2E auth-forgatókönyv kizárólag a Playwright fejlesztői szerverén engedélyezett, szerveroldali teszt-cookie-t használ. Nem kapcsolódik cloud projekthez és production buildben nem aktiválható.
 
-## Milestone 1 határa
+## Megőrzött Milestone 1 alap
 
-Ebben a mérföldkőben Supabase Auth, migrációk, RLS, valamint a saját dalok/haladás perzisztenciaalapja készült el. A dalfelismerés és a fájlfeltöltés továbbra is teljesen helyi mock. Nincs mikrofonrögzítés, audio Storage, felismerési provider, dalszöveg, AI, lesson generation vagy billing.
+A Supabase Auth, migrációk, RLS és a korábbi könyvtár/haladás perzisztenciaalapja változatlanul megmarad. A látható felület már „Saját tanulásaim” néven hivatkozik rá, de a dal-központú adatbázisséma migrációja szándékosan a következő mérföldkőre marad. Nincs mikrofonrögzítés, audio Storage, STT provider, AI-elemzés, nyilvános megosztás vagy billing.

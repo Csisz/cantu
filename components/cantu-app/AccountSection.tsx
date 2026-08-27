@@ -17,7 +17,7 @@ export function AccountSection({ auth, library, notice }: AccountSectionProps) {
       <div className={styles.accountHeading}>
         <div>
           <span className={styles.kicker}>Személyes tanulási tér</span>
-          <h2 id="library-title">Saját dalaim</h2>
+          <h2 id="library-title">Saját tanulásaim</h2>
         </div>
         {auth.status === "authenticated" ? (
           <form action={signOutAction}>
@@ -33,11 +33,11 @@ export function AccountSection({ auth, library, notice }: AccountSectionProps) {
       {auth.status === "unauthenticated" ? (
         <div className={styles.accountGrid}>
           <div className={styles.accountCopy}>
-            <span aria-hidden="true">🎵</span>
+            <span aria-hidden="true">✦</span>
             <h3>A demó szabadon kipróbálható.</h3>
             <p>
-              Fiókra csak a későbbi mentéshez és haladáshoz lesz szükség. A Listen és
-              Upload mock folyamat most belépés nélkül is teljes marad.
+              Fiókra csak a későbbi mentéshez és haladáshoz lesz szükség. A helyi
+              Input Studio most belépés nélkül is használható.
             </p>
           </div>
           <AuthPanel configured={auth.configured} />
@@ -47,16 +47,16 @@ export function AccountSection({ auth, library, notice }: AccountSectionProps) {
       {auth.status === "authenticated" && library.status === "error" ? (
         <div className={styles.libraryEmpty}>
           <span aria-hidden="true">!</span>
-          <h3>Most nem érjük el a saját dalaidat.</h3>
+          <h3>Most nem érjük el a saját tanulásaidat.</h3>
           <p>{library.message}</p>
         </div>
       ) : null}
 
       {auth.status === "authenticated" && library.status === "ready" && library.items.length === 0 ? (
         <div className={styles.libraryEmpty}>
-          <span aria-hidden="true">♫</span>
-          <h3>Még nincs elmentett dalod.</h3>
-          <p>Az első megerősített dalad itt fog megjelenni.</p>
+          <span aria-hidden="true">✦</span>
+          <h3>Még nincs elmentett tanulásod.</h3>
+          <p>A később elmentett kifejezéseid és haladásod itt jelenik majd meg.</p>
         </div>
       ) : null}
 
@@ -65,7 +65,7 @@ export function AccountSection({ auth, library, notice }: AccountSectionProps) {
           {library.items.map((item) => (
             <li key={item.songId}>
               <div className={styles.libraryArtwork}>
-                <span aria-hidden="true">♫</span>
+                <span aria-hidden="true">✦</span>
               </div>
               <div>
                 <strong>{item.title}</strong>

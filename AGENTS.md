@@ -8,85 +8,81 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# AGENTS.md — Cantu Coding Rules
+# AGENTS.md — Cantu Coding Rules v3
 
 These rules apply to all coding agents working on Cantu.
 
 ## 1. Product boundary
 
-Cantu v1 teaches **Italian to Hungarian speakers**. Keep schemas extensible, but do not build a generic multi-language platform before the Italian → Hungarian experience works end-to-end.
+Cantu v1 helps **Hungarian speakers learn Italian from short user-provided real-world audio and text**. Keep schemas extensible, but do not build a generic multi-language platform before the Italian → Hungarian experience works end-to-end.
+
+The `Cantu_Project_Sources_v3_BYOC` source pack supersedes older song/lyrics-centric documentation whenever the two conflict.
 
 ## 2. Core outcome
 
 A successful first session is:
 
-1. user opens Cantu;
-2. user chooses **Listen** or **Upload**;
-3. Cantu identifies the track or extracts metadata;
-4. Cantu shows a confirmation card: title, artist, artwork and source links when available;
-5. user confirms “Igen, ez az”;
-6. Cantu validates that the learning language is Italian;
-7. Cantu obtains canonical lyrics through an approved/licensed source;
-8. Cantu generates a Hungarian song summary and progressive lesson;
-9. user completes **Quick Understand**: chorus + key words + key lines + short quiz;
-10. user may continue into **Deep Dive** for broader or full-song understanding.
+1. user chooses **Listen**, **Audio file** or **Text**;
+2. user brings a short piece of Italian they want to understand;
+3. audio-file selection and waveform work locally in the browser;
+4. Cantu shows exactly what source or transcript will be analysed;
+5. the user verifies or edits it;
+6. Cantu explains the natural Hungarian meaning;
+7. Cantu extracts a few useful Italian chunks and one relevant language insight;
+8. the learner says or recalls something actively;
+9. useful derived learning items may be saved without requiring permanent storage of the complete source.
 
-## 3. Song entry is provider-independent
+## 3. Input and providers are independent
 
-Never couple UI or domain models directly to AudD, ACRCloud, ShazamKit, Musixmatch or any single vendor.
+Never couple UI or domain models directly to one speech-to-text, language-analysis or pronunciation vendor.
 
 Use interfaces/adapters such as:
 
-- `MusicRecognitionProvider`
-- `LyricsProvider`
-- `TranscriptionProvider`
-- `LessonGenerationProvider`
+- `SpeechToTextProvider`
+- `LanguageAnalysisProvider`
+- `PronunciationProvider` (later)
 
 Persist provider-specific raw payloads only in diagnostic/private fields when needed.
 
-## 4. Recognition is not confirmation
+## 4. Confirmation before teaching
 
-A recognition match is a **candidate**, not the final track. Always provide a user confirmation step before lyrics retrieval or expensive AI work.
+Speech-to-text output is a candidate transcription, not unquestionable truth. Always provide a user confirmation/edit step before learning generation.
 
 Required states:
 
-- listening / recording
-- identifying
-- candidate found
-- user confirmed
-- user rejected
-- no match
-- retry / manual search
+- source selection;
+- transcription candidate for audio;
+- user confirmation/edit;
+- learning generation only after confirmation.
 
-## 5. Do not download Spotify or YouTube audio
+## 5. Legal-by-design source rules
 
-Do not implement stream ripping, protected-media downloading, DRM bypassing, or scraping that violates platform terms. Spotify/YouTube links may later be used to resolve identity/metadata through permitted APIs or provider metadata.
+Do not implement stream ripping, protected-media downloading, DRM bypassing, lyrics/content scraping, public source catalogues or bulk reconstruction flows. Do not claim that a numeric excerpt duration is automatically lawful.
 
-## 6. Copyright-aware lyrics architecture
+## 6. Local and private inputs
 
-Do not make public product behavior depend on scraping lyrics websites. Prefer licensed/approved lyrics providers. Separate:
+For audio-file mode, prefer:
 
-- canonical lyrics retrieval;
-- display rights;
-- translation rights;
-- AI linguistic analysis;
-- time alignment.
+- complete file stays client-side;
+- waveform and range selection happen locally;
+- only the selected short clip may leave the browser in a later processing milestone;
+- raw audio is transient and never placed in generic analytics or a default archive.
 
-The app must be able to disable full-lyrics or full-translation display per provider/territory/plan without breaking the lesson.
+Text input is first-class, private by default and initially limited to 2,000 characters. Do not persist source text merely because Supabase exists.
 
 ## 7. Privacy for Listen mode
 
-Microphone audio used for recognition should be short-lived. By default:
+Microphone audio should be short-lived. By default:
 
 - capture only the minimum useful snippet;
-- send it only for recognition;
+- send only the selected short clip for the requested processing;
 - do not store the raw ambient recording after recognition unless explicitly required and disclosed;
 - log metadata, not ambient audio;
 - never begin recording without a clear user action and browser permission.
 
-## 8. Cost guardrails
+## 8. Learning and cost guardrails
 
-Do not call transcription or large-language-model generation before the song is confirmed. Cache canonical song results and lessons when rights and product policy allow. Apply idempotency and usage limits to paid external APIs.
+Teach, do not merely translate: natural meaning first, then a few reusable chunks, at most one or two contextual grammar/register insights, and a small active-recall step. Do not call learning generation before the source/transcript is confirmed. Apply idempotency and usage limits to paid external APIs.
 
 ## 9. UX rules
 
@@ -109,12 +105,12 @@ Cantu should feel musical, youthful, warm and intelligent — not like an enterp
 - Migrations checked into source control.
 - Unit tests for domain logic and provider adapters.
 - Integration tests for ingestion state transitions.
-- E2E test for at least one complete mocked Italian song flow.
+- E2E tests for the local text and audio-file input flows and Auth regression.
 - Accessibility: keyboard navigation, focus states, semantic controls, reduced-motion handling.
 
 ## 11. Implementation discipline
 
-Follow `docs/12_IMPLEMENTATION_ROADMAP.md`. Do not jump ahead by implementing AI, billing or recognition during Milestone 0 unless explicitly asked.
+Follow `Cantu_Project_Sources_v3_BYOC/docs/12_IMPLEMENTATION_ROADMAP.md`. Do not jump ahead into later milestones unless explicitly asked.
 
 Every Codex task should:
 
@@ -124,4 +120,3 @@ Every Codex task should:
 4. run relevant tests/build/lint;
 5. report changed files, checks and remaining issues;
 6. never silently replace the existing visual direction.
-

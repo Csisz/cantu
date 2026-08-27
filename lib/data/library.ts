@@ -31,7 +31,7 @@ export async function getLibrarySnapshot(auth: AuthContext): Promise<LibrarySnap
     return {
       status: "error",
       items: [],
-      message: "A saját dalok most nem tölthetők be. Próbáld meg később.",
+      message: "A saját tanulások most nem tölthetők be. Próbáld meg később.",
     };
   }
 

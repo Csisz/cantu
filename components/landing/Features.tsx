@@ -2,10 +2,10 @@ import { Reveal } from "@/components/ui/Reveal";
 import styles from "./landing.module.css";
 
 const features = [
-  ["LÉNYEG", "Miről szól?", "Rövid magyar összefoglaló, hogy már a következő hallgatásnál tudd, merre visz a dal."],
-  ["REFRÉN", "A rész, ami veled marad", "A visszatérő sorokkal kezdünk: kevés, erős és újra meg újra hallható nyelv."],
-  ["KIFEJEZÉS", "Használható olasz", "A dal legfontosabb szókapcsolatai természetes magyar magyarázattal, nem szótárlistaként."],
-  ["NYELVI TRÜKK", "Érthető nyelvtan", "Rövid megfigyelések közvetlenül a dalból — csak annyi, amennyi segít meghallani a mintát."],
+  ["JELENTÉS", "Mit jelent valójában?", "Természetes magyar magyarázat, amely megőrzi a rövid forrás hangját és szándékát."],
+  ["KIFEJEZÉS", "Amit érdemes megjegyezni", "Néhány újra használható olasz szókapcsolat, nem hosszú szótárlista."],
+  ["MIÉRT ÍGY?", "Pont elég nyelvtan", "Egy-két rövid megfigyelés csak arról, ami ezt a mondatot érthetőbbé teszi."],
+  ["AKTÍV LÉPÉS", "Mondd ki, idézd fel", "Egy apró gyakorlás, hogy ne csak lefordítsd, hanem használni is kezdd."],
 ] as const;
 
 export function Features() {
@@ -13,8 +13,8 @@ export function Features() {
     <section className={styles.features} aria-labelledby="features-title">
       <div className={styles.featureBackdrop} aria-hidden="true" />
       <div className={styles.featurePanel}>
-        <span className={styles.eyebrow}>Mit ad majd egy dal?</span>
-        <h2 id="features-title">Nem egy falnyi dalszöveget.</h2>
+        <span className={styles.eyebrow}>Mit ad majd egy rövid forrás?</span>
+        <h2 id="features-title">Nem csak egy fordítást.</h2>
         <div className={styles.featureRows}>
           {features.map(([label, title, copy]) => (
             <Reveal className={styles.featureRow} key={label}>

@@ -2,13 +2,13 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { AuthContext } from "@/lib/auth/types";
 import type { LibrarySnapshot } from "@/lib/data/library";
-import type { EntryMode } from "@/lib/recognition/types";
+import type { InputMode } from "@/lib/input/types";
 import { AccountSection } from "./AccountSection";
-import { SongRecognitionFlow } from "./SongRecognitionFlow";
+import { InputStudio } from "./InputStudio";
 import styles from "./app.module.css";
 
 type AppShellProps = {
-  initialMode: EntryMode;
+  initialMode: InputMode;
   auth: AuthContext;
   library: LibrarySnapshot;
   authNotice?: string;
@@ -34,17 +34,18 @@ export function AppShell({ initialMode, auth, library, authNotice }: AppShellPro
       <div className={styles.appBackdrop} aria-hidden="true" />
       <section className={styles.appMain} aria-labelledby="app-title">
         <div className={styles.intro}>
-          <span className={styles.kicker}>Új dal</span>
-          <h1 id="app-title">Hozd a zenét. A találatot te döntöd el.</h1>
+          <span className={styles.kicker}>Cantu Input Studio</span>
+          <h1 id="app-title">Hozd azt az olaszt, amit érteni szeretnél.</h1>
           <p>
-            Ebben a bemutatóban minden felismerési lépés helyben, szimulálva történik.
+            Hallgasd meg, nyiss meg egy helyi hangfájlt, vagy írd be a rövid szöveget.
+            A pontos forrást mindig te erősíted meg.
           </p>
         </div>
-        <SongRecognitionFlow initialMode={initialMode} />
+        <InputStudio initialMode={initialMode} />
         <AccountSection auth={auth} library={library} notice={authNotice} />
       </section>
       <footer className={styles.appFooter}>
-        <span><i aria-hidden="true" /> Mock felismerés · biztonságos fiókalap</span>
+        <span><i aria-hidden="true" /> Helyi Input Studio · privát forráskezelés</span>
         <Link href="/">Vissza a bemutatóhoz</Link>
       </footer>
     </main>

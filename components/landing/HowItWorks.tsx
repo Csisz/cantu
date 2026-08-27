@@ -5,18 +5,18 @@ import styles from "./landing.module.css";
 const steps = [
   {
     number: "1",
-    title: "Hallgasd meg vagy töltsd fel",
-    copy: "Játssz le egy tiszta részletet hangszórón, vagy válassz egy MP3, M4A vagy WAV fájlt.",
+    title: "Hozd azt, amit nem értesz",
+    copy: "Hallgass meg egy rövid részletet, nyiss meg egy helyi hangfájlt, vagy írj be egy olasz szöveget.",
   },
   {
     number: "2",
-    title: "Cantu felismeri a dalt",
-    copy: "Megmutatjuk a lehetséges találatot. A szám csak akkor lesz elfogadva, ha te is megerősíted.",
+    title: "Ellenőrizd, mit hallott vagy olvasott a Cantu",
+    copy: "A pontos forrást mindig te hagyod jóvá, mielőtt elkezdődik a tanulás.",
   },
   {
     number: "3",
-    title: "Tanuld meg a refrént és a fontos sorokat",
-    copy: "A dal értelmével kezdünk, aztán jönnek a megjegyezhető olasz kifejezések és nyelvi minták.",
+    title: "Értsd meg, jegyezd meg, mondd ki",
+    copy: "A természetes jelentés után a használható kifejezések és egy rövid aktív gyakorlás következik.",
   },
 ] as const;
 
@@ -25,7 +25,7 @@ export function HowItWorks() {
     <section id="hogyan-mukodik" className={styles.how} aria-labelledby="how-title">
       <div className={styles.sectionHeading}>
         <span className={styles.eyebrow}>Három tiszta lépés</span>
-        <h2 id="how-title">A daltól az első felismerésig.</h2>
+        <h2 id="how-title">A valódi pillanattól a használható olaszig.</h2>
       </div>
       <div className={styles.steps}>
         {steps.map((step, index) => (
