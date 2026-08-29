@@ -30,8 +30,8 @@ export function saveE2ELearningSession(userId: string, metadata: LearningSession
     id: randomUUID(),
     userId,
     inputType: metadata.inputType,
-    sourceStatus: metadata.inputType === "text" ? "user_verified" : "pending",
-    sourceDurationMs: metadata.inputType === "audio_file" ? metadata.sourceDurationMs : null,
+    sourceStatus: metadata.inputType === "text" ? "text_direct" : "pending",
+    sourceDurationMs: metadata.inputType !== "text" ? metadata.sourceDurationMs : null,
     sourceCharCount: metadata.inputType === "text" ? metadata.sourceCharCount : null,
     createdAt: new Date().toISOString(),
     progress: { stage: "new", percentComplete: 0, lastOpenedAt: null },
@@ -53,4 +53,34 @@ export function hasE2ELearningSession(userId: string, sessionId: string) {
 
 export function clearE2ELearningSessions(userId: string) {
   globalStore[storeKey] = rows().filter((row) => row.userId !== userId);
+}
+
+export function startE2ETranscriptionSession(
+  userId: string,
+  inputType: "microphone" | "audio_file",
+  durationMs: number,
+) {
+  const sessionId = randomUUID();
+  rows().unshift({
+    id: sessionId,
+    userId,
+    inputType,
+    sourceStatus: "pending",
+    sourceDurationMs: durationMs,
+    sourceCharCount: null,
+    createdAt: new Date().toISOString(),
+    progress: { stage: "new", percentComplete: 0, lastOpenedAt: null },
+  });
+  return { sessionId, attemptId: randomUUID() };
+}
+
+export function updateE2ETranscriptionStatus(
+  userId: string,
+  sessionId: string,
+  status: "stt_unverified" | "failed" | "user_verified" | "user_edited",
+) {
+  const row = rows().find((item) => item.userId === userId && item.id === sessionId);
+  if (!row) return false;
+  row.sourceStatus = status;
+  return true;
 }

@@ -39,7 +39,7 @@ describe("learning session persistence boundary", () => {
       input_type: "text",
       source_language: "it",
       explanation_language: "hu",
-      source_status: "user_verified",
+      source_status: "text_direct",
       source_char_count: 26,
       source_duration_ms: null,
       source_fingerprint: null,
@@ -52,11 +52,10 @@ describe("learning session persistence boundary", () => {
   it("excludes text, file, blobs, audio bytes and waveform peaks", () => {
     const source = {
       kind: "audio" as const,
-      fileName: "private.wav",
-      fileType: "audio/wav",
-      durationMs: 45_000,
-      startMs: 5_000,
-      endMs: 25_000,
+      text: "Ci vediamo domani.",
+      sourceStatus: "user_verified" as const,
+      sessionId: "10000000-0000-4000-8000-000000000001",
+      durationMs: 20_000,
     };
     const metadata = toLearningSessionMetadata(source);
     expect(metadata).toEqual({ inputType: "audio_file", sourceDurationMs: 20_000 });
@@ -64,7 +63,7 @@ describe("learning session persistence boundary", () => {
       "fileName", "fileType", "file", "blob", "audioBytes", "waveform", "peaks", "durationMs",
     ]));
 
-    const textMetadata = toLearningSessionMetadata({ kind: "text", text: "Questo resta locale." });
+    const textMetadata = toLearningSessionMetadata({ kind: "text", text: "Questo resta locale.", sourceStatus: "text_direct" });
     expect(textMetadata).toEqual({ inputType: "text", sourceCharCount: 20 });
     expect(JSON.stringify(textMetadata)).not.toContain("Questo resta locale.");
   });

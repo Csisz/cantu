@@ -3,37 +3,30 @@ export type InputMode = "listen" | "audio" | "text";
 export type TextLearningSource = {
   kind: "text";
   text: string;
+  sourceStatus: "text_direct";
 };
 
-export type AudioLearningSource = {
-  kind: "audio";
-  fileName: string;
-  fileType: string;
+export type VerifiedAudioLearningSource = {
+  kind: "audio" | "listen";
+  text: string;
+  sourceStatus: "user_verified" | "user_edited";
+  sessionId: string;
   durationMs: number;
-  startMs: number;
-  endMs: number;
-};
-
-export type ListenLearningSource = {
-  kind: "listen";
-  mocked: true;
 };
 
 export type LearningSource =
   | TextLearningSource
-  | AudioLearningSource
-  | ListenLearningSource;
+  | VerifiedAudioLearningSource;
 
 export type InputStudioState =
   | { status: "entry"; mode: InputMode; draftText?: string }
-  | { status: "source_confirmation"; source: LearningSource }
+  | { status: "source_confirmation"; source: TextLearningSource }
   | { status: "learning_preview"; source: LearningSource };
 
 export type InputStudioAction =
   | { type: "SELECT_MODE"; mode: InputMode }
   | { type: "SUBMIT_TEXT"; text: string }
-  | { type: "SUBMIT_AUDIO"; source: AudioLearningSource }
-  | { type: "PREVIEW_LISTEN_FLOW" }
+  | { type: "COMPLETE_TRANSCRIPT"; source: VerifiedAudioLearningSource }
   | { type: "EDIT_SOURCE" }
   | { type: "CONFIRM_SOURCE" }
   | { type: "START_OVER"; mode?: InputMode };

@@ -21,16 +21,11 @@ export function inputStudioReducer(
     case "SUBMIT_TEXT": {
       const text = normalizeTextInput(action.text);
       return text
-        ? { status: "source_confirmation", source: { kind: "text", text } }
+        ? { status: "source_confirmation", source: { kind: "text", text, sourceStatus: "text_direct" } }
         : state;
     }
-    case "SUBMIT_AUDIO":
-      return { status: "source_confirmation", source: action.source };
-    case "PREVIEW_LISTEN_FLOW":
-      return {
-        status: "source_confirmation",
-        source: { kind: "listen", mocked: true },
-      };
+    case "COMPLETE_TRANSCRIPT":
+      return { status: "learning_preview", source: action.source };
     case "EDIT_SOURCE":
       if (state.status === "entry") return state;
       return {

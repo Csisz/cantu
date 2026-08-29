@@ -12,3 +12,10 @@ export function isE2EAuthMockEnabled() {
     process.env.CANTU_E2E_AUTH_MOCK === "1"
   );
 }
+
+export function isE2ESTTMockEnabled() {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.CANTU_E2E_STT_MOCK === "1"
+  );
+}

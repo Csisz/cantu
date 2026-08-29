@@ -1,3 +1,6 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import { signOutAction } from "@/app/app/actions";
 import { deleteLearningSessionAction } from "@/app/app/learning-actions";
 import { AuthPanel } from "@/components/auth/AuthPanel";
@@ -21,6 +24,8 @@ const inputLabels: Record<LearningHistoryItem["inputType"], string> = {
 };
 
 const statusLabels: Record<string, string> = {
+  stt_unverified: "Átirat ellenőrzésre vár",
+  text_direct: "Közvetlen szövegforrás",
   pending: "Feldolgozásra vár",
   transcribed: "Átirat kész",
   user_verified: "Forrás ellenőrizve",
@@ -36,6 +41,46 @@ function sessionMetadata(item: LearningHistoryItem) {
 }
 
 export function AccountSection({ auth, history, notice }: AccountSectionProps) {
+  const [optimisticItems, setOptimisticItems] = useState<LearningHistoryItem[]>([]);
+  const [removedIds, setRemovedIds] = useState<string[]>([]);
+  const persistedItems = history.status === "ready" ? history.items : [];
+  const visibleItems = [
+    ...optimisticItems.filter((item) => !persistedItems.some((persisted) => persisted.id === item.id)),
+    ...persistedItems,
+  ].filter((item) => !removedIds.includes(item.id));
+
+  useEffect(() => {
+    function addSavedSession(event: Event) {
+      const detail = (event as CustomEvent<{
+        id: string;
+        inputType: "microphone" | "audio_file";
+        sourceStatus: "user_verified" | "user_edited";
+        sourceDurationMs: number;
+        createdAt: string;
+      }>).detail;
+      if (!detail?.id) return;
+      setOptimisticItems((current) => current.some((item) => item.id === detail.id) ? current : [{
+        id: detail.id,
+        inputType: detail.inputType,
+        sourceStatus: detail.sourceStatus,
+        sourceDurationMs: detail.sourceDurationMs,
+        sourceCharCount: null,
+        createdAt: detail.createdAt,
+        progress: { stage: "new", percentComplete: 0, lastOpenedAt: null },
+      }, ...current]);
+    }
+    function removeDeletedSession(event: Event) {
+      const id = (event as CustomEvent<{ id: string }>).detail?.id;
+      if (id) setRemovedIds((current) => current.includes(id) ? current : [...current, id]);
+    }
+    window.addEventListener("cantu:learning-session-saved", addSavedSession);
+    window.addEventListener("cantu:learning-session-deleted", removeDeletedSession);
+    return () => {
+      window.removeEventListener("cantu:learning-session-saved", addSavedSession);
+      window.removeEventListener("cantu:learning-session-deleted", removeDeletedSession);
+    };
+  }, []);
+
   return (
     <section className={styles.accountSection} aria-labelledby="library-title">
       <div className={styles.accountHeading}>
@@ -76,7 +121,7 @@ export function AccountSection({ auth, history, notice }: AccountSectionProps) {
         </div>
       ) : null}
 
-      {auth.status === "authenticated" && history.status === "ready" && history.items.length === 0 ? (
+      {auth.status === "authenticated" && history.status === "ready" && visibleItems.length === 0 ? (
         <div className={styles.libraryEmpty}>
           <span aria-hidden="true">✦</span>
           <h3>Még nincs elmentett tanulásod.</h3>
@@ -84,9 +129,9 @@ export function AccountSection({ auth, history, notice }: AccountSectionProps) {
         </div>
       ) : null}
 
-      {auth.status === "authenticated" && history.status === "ready" && history.items.length > 0 ? (
+      {auth.status === "authenticated" && history.status === "ready" && visibleItems.length > 0 ? (
         <ul className={styles.libraryList}>
-          {history.items.map((item) => (
+          {visibleItems.map((item) => (
             <li key={item.id}>
               <div className={styles.libraryArtwork}>
                 <span aria-hidden="true">{item.inputType === "text" ? "Aa" : "◉"}</span>

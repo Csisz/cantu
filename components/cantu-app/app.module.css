@@ -1666,6 +1666,128 @@
   line-height: 1.5;
 }
 
+.captureStatus {
+  min-height: 54px;
+  margin-top: 18px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+}
+
+.captureStatus p,
+.captureStatus strong,
+.captureStatus span {
+  display: block;
+}
+
+.captureStatus span {
+  margin-top: 6px;
+  font: 800 1.1rem/1 var(--font-display), sans-serif;
+}
+
+.captureActions,
+.recoveryActions {
+  width: min(620px, 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px auto 0;
+}
+
+.captureActions .mainAction,
+.captureActions .secondaryAction,
+.recoveryActions .secondaryAction {
+  margin-top: 0;
+}
+
+.captureActions audio {
+  width: 100%;
+  max-width: 440px;
+}
+
+.isRecording .listenRing {
+  border-color: color-mix(in srgb, var(--danger) 70%, transparent);
+  animation-duration: 1.2s;
+}
+
+.processingPanel {
+  min-height: 590px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(34px, 6vw, 64px);
+  text-align: center;
+}
+
+.processingPanel h2 {
+  max-width: 18ch;
+  margin-top: 18px;
+  font-size: clamp(2rem, 4.6vw, 3.5rem);
+}
+
+.processingPanel > p {
+  max-width: 58ch;
+  margin-top: 16px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.processingPulse {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 24px;
+  border: 2px solid color-mix(in srgb, var(--cyan) 62%, transparent);
+  border-radius: 50%;
+  box-shadow: 0 0 0 16px color-mix(in srgb, var(--purple) 8%, transparent);
+  animation: processingPulse 1.6s ease-in-out infinite;
+}
+
+@keyframes processingPulse {
+  50% { transform: scale(0.88); opacity: 0.58; }
+}
+
+.languageWarning {
+  width: min(680px, 100%);
+  margin-top: 20px;
+  padding: 14px 16px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 40%, var(--line));
+  border-radius: 16px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--cyan) 9%, transparent);
+}
+
+.transcriptEditor {
+  width: min(680px, 100%);
+  display: grid;
+  gap: 8px;
+  margin-top: 28px;
+  text-align: left;
+}
+
+.transcriptEditor label {
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.transcriptEditor textarea {
+  width: 100%;
+  min-height: 170px;
+  resize: vertical;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  color: var(--ink);
+  background: var(--glass-strong);
+  font: 600 1.05rem/1.55 var(--font-display), sans-serif;
+}
+
+.transcriptEditor small {
+  justify-self: end;
+  color: var(--ink-soft);
+}
+
 .learningPreview {
   text-align: center;
 }
@@ -1789,6 +1911,7 @@
   .textPanel,
   .audioPanel,
   .confirmationPanel,
+  .processingPanel,
   .learningPreview {
     padding: 34px 16px 42px;
   }
@@ -1819,6 +1942,12 @@
     width: 100%;
   }
 
+  .confirmationActions a,
+  .captureActions button,
+  .recoveryActions button {
+    width: 100%;
+  }
+
   .learningCards article {
     grid-template-columns: auto minmax(0, 1fr);
   }
@@ -1826,6 +1955,13 @@
   .learningCards small {
     grid-column: 2;
     justify-self: start;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .processingPulse,
+  .isRecording .listenRing {
+    animation: none;
   }
 }
 

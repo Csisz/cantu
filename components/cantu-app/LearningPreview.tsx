@@ -26,7 +26,7 @@ export function LearningPreview({
       <span className={styles.stepBadge}>3 / 3 · Tanulási vázlat</span>
       <h2 id="learning-preview-title">Innen épül majd fel a saját mini leckéd</h2>
       <p className={styles.previewLead}>Ez szerkezeti előnézet, nem elkészült AI-elemzés.</p>
-      {source.kind === "text" ? <p className={styles.previewSource} lang="it">{source.text}</p> : null}
+      <p className={styles.previewSource} lang="it">{source.text}</p>
       <div className={styles.learningCards}>
         {previewSections.map(([title, copy], index) => (
           <article key={title}>

@@ -19,8 +19,11 @@ export function DeleteLearningControl({ sessionId, action }: { sessionId: string
   const router = useRouter();
 
   useEffect(() => {
-    if (state.status === "success") router.refresh();
-  }, [router, state.status]);
+    if (state.status === "success") {
+      window.dispatchEvent(new CustomEvent("cantu:learning-session-deleted", { detail: { id: sessionId } }));
+      router.refresh();
+    }
+  }, [router, sessionId, state.status]);
 
   if (!confirming) {
     return (

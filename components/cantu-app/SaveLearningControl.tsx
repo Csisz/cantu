@@ -26,6 +26,15 @@ export function SaveLearningControl({
   const [state, formAction, pending] = useActionState(action, initialPersistenceActionState);
   const metadata = toLearningSessionMetadata(source);
 
+  if (source.kind !== "text") {
+    return (
+      <div className={styles.savePanel}>
+        <strong>A munkamenet biztonságos metaadatai elmentve.</strong>
+        <p>A hang és az ellenőrzött átirat továbbra is csak helyben, átmenetileg marad meg.</p>
+      </div>
+    );
+  }
+
   if (!metadata) {
     return (
       <div className={styles.savePanel}>

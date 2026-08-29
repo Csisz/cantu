@@ -23,9 +23,17 @@ const audioSessionSchema = z
   })
   .strict();
 
+const microphoneSessionSchema = z
+  .object({
+    inputType: z.literal("microphone"),
+    sourceDurationMs: z.number().int().min(1).max(MAX_AUDIO_SELECTION_MS),
+  })
+  .strict();
+
 export const learningSessionMetadataSchema = z.discriminatedUnion("inputType", [
   textSessionSchema,
   audioSessionSchema,
+  microphoneSessionSchema,
 ]);
 
 export const sessionIdSchema = z.string().uuid();
@@ -44,7 +52,6 @@ export function toPersistenceInputType(mode: InputMode) {
 }
 
 export function toLearningSessionMetadata(source: LearningSource): LearningSessionMetadata | null {
-  if (source.kind === "listen") return null;
   if (source.kind === "text") {
     return learningSessionMetadataSchema.parse({
       inputType: "text",
@@ -53,8 +60,8 @@ export function toLearningSessionMetadata(source: LearningSource): LearningSessi
   }
 
   return learningSessionMetadataSchema.parse({
-    inputType: "audio_file",
-    sourceDurationMs: source.endMs - source.startMs,
+    inputType: source.kind === "audio" ? "audio_file" : "microphone",
+    sourceDurationMs: source.durationMs,
   });
 }
 
@@ -70,8 +77,8 @@ export function buildLearningSessionInsert(
     input_type: parsed.inputType,
     source_language: DEFAULT_LANGUAGE_PAIR.sourceLanguage,
     explanation_language: DEFAULT_LANGUAGE_PAIR.explanationLanguage,
-    source_status: parsed.inputType === "text" ? "user_verified" : "pending",
-    source_duration_ms: parsed.inputType === "audio_file" ? parsed.sourceDurationMs : null,
+    source_status: parsed.inputType === "text" ? "text_direct" : "pending",
+    source_duration_ms: parsed.inputType !== "text" ? parsed.sourceDurationMs : null,
     source_char_count: parsed.inputType === "text" ? parsed.sourceCharCount : null,
     source_fingerprint: null,
     save_source: false,

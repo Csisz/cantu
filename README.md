@@ -1,18 +1,16 @@
 # Cantu
 
-Cantu egy Bring Your Own Content nyelvtanuló alkalmazás magyar anyanyelvű olasztanulóknak. Rövid, valódi olasz hang- vagy szövegforrásból épít majd megértési és gyakorlási útvonalat.
+Cantu egy Bring Your Own Content nyelvtanuló alkalmazás magyar anyanyelvű olasztanulóknak. Rövid, valós olasz hang- vagy szövegforrásból épít majd megértési és gyakorlási útvonalat.
 
 > **Hallgasd. Olvasd. Értsd meg. Mondd ki.**
 
 A `Cantu_Project_Sources_v3_BYOC` forráscsomag felülírja a régebbi, dal- és dalszöveg-központú dokumentációt, ahol a két irány ütközik.
 
-## Előfeltételek
+## Előfeltételek és indítás
 
 - Node.js 22+
 - npm
-- Docker Desktop vagy más Docker-kompatibilis konténerkörnyezet a helyi Supabase-hez
-
-## Alkalmazás indítása
+- Docker Desktop vagy kompatibilis konténerkörnyezet a helyi Supabase-hez
 
 ```bash
 npm install
@@ -20,48 +18,70 @@ copy .env.example .env.local
 npm run dev
 ```
 
-Az alkalmazás fő útvonalai:
+Fő útvonalak:
 
 - `/` — marketingoldal;
-- `/app` — helyi Input Studio (Listen / Hangfájl / Szöveg), fiókbelépés és a személyes tanulási tér alapja;
-- `/auth/confirm` — Supabase e-mail-megerősítési végpont.
+- `/app` — Input Studio, autentikáció és a „Saját tanulásaim”;
+- `/api/transcribe` — hitelesített, kizárólag átmeneti rövidklip-feldolgozás;
+- `/auth/confirm` — Supabase e-mail-megerősítés.
 
-Supabase-konfiguráció nélkül a landing és a teljes helyi Input Studio továbbra is működik. A fiók- és perzisztenciafelület ilyenkor biztonságos konfigurálatlan állapotot mutat.
+Supabase-konfiguráció nélkül a landing és a helyi Input Studio használható, de a valós STT és a mentés hitelesített fiókot igényel.
 
-## Milestone 3 — általánosított perzisztencia
+## Milestone 4 — Speech-to-Text vertikális szelet
 
-- A hangfájl dekódolása, hullámformája, legfeljebb 30 másodperces kijelölése és előnézete kizárólag a böngészőben történik.
-- A teljes hangfájlt és a kijelölt részlet hangadatait az Input Studio nem tölti fel. Nincs audio Storage vagy feltöltési végpont.
-- A szöveges forrás legfeljebb 2 000 karakter; a forrásszöveg helyi marad, nincs AI-elemzés vagy automatikus mentés.
-- Bejelentkezett felhasználó a tanulási vázlatnál kifejezetten menthet egy metadata-only munkamenetet. Szövegnél csak a karakterszám, hangnál csak a kijelölt részlet időtartama kerül mentésre.
-- A forrásmegőrzés alapállapota `not_stored`, a `save_source` alapértéke `false`, a `verified_source_text` pedig `null`. A DAL külön, tulajdonoshoz kötött forrástörlési útvonalat biztosít a későbbi ideiglenes feldolgozáshoz.
-- A Listen mód egy biztonságos interakciós előnézet: valós mikrofonrögzítés még nincs.
-- Valós STT, LLM-alapú tanulási elemzés és audioátvitel későbbi mérföldkő feladata.
+### Hangfájl
 
-### Új privát táblák
+A teljes fájl a böngészőben marad. A Web Audio API helyben dekódolja, a felhasználó legfeljebb 30 másodpercet jelöl ki, majd a kliens kizárólag ezt a tartományt kódolja mono PCM WAV klippé. Csak ez az új, kivágott Blob kerül a hitelesített transzkripciós kérésbe; az eredeti `File`, fájlnév, teljes időtartam és hullámforma nem.
 
-- `learning_sessions` — a felhasználó által kifejezetten mentett, minimalizált munkamenet-metaadat;
-- `processing_attempts` — későbbi szerveroldali feldolgozások operatív állapota, kliensről nem írható;
-- `learning_results` — későbbi validált, származtatott eredmény, kliensről nem írható;
-- `user_phrasebook` — privát, kifejezetten mentett kifejezések; session törlésekor a forráshivatkozás `SET NULL`;
-- `learning_progress` — tulajdonos- és session-konzisztens általános haladás.
+### Hallgasd
 
-Mindegyik új alkalmazástábla RLS-védett. A normál böngészőkliens tulajdonosi azonosítóját a szerver az autentikált sessionből származtatja, az RLS pedig második védelmi réteg. Nincs globális forrás-deduplikáció, kereshető forráskatalógus vagy nyilvános felhasználói tartalom.
+A mikrofon csak kifejezett gombnyomás után kér engedélyt. A `MediaRecorder` legfeljebb 30 másodpercet rögzít, kézzel leállítható vagy elvethető, és a streamek trackjeit leállítja. Az elkészült rövid felvétel előnézhető, újravehető, majd külön gombbal küldhető átírásra.
 
-### Legacy stratégia
+### STT és ellenőrzés
 
-A `songs`, `recognition_attempts`, `lyrics_versions`, `lessons`, `user_songs` és `user_song_progress` táblák átmenetileg, változatlan történeti struktúraként megmaradnak. Az aktív BYOC runtime nem olvassa és nem írja őket, automatikus tartalmi átmigrálás és destruktív táblaeldobás nincs.
+Az UI a providerfüggetlen `SpeechToTextProvider` határt használja. Az első adapter a jelenlegi OpenAI completed-file transcription végpontot és a `gpt-transcribe` modellt használja közvetlen multipart kéréssel. Nem használ generic Files API-t, és a böngésző soha nem kap OpenAI-kulcsot.
+
+Az STT-eredmény csak jelölt:
+
+```text
+hang → Ezt hallottam → Igen, pontos / Javítom → ellenőrzött helyi forrás
+```
+
+Az átirat nem erősítődik meg automatikusan. Az eredeti jelölt és a kézzel javított szöveg is legfeljebb 2 000 karakter. Magyar fordítás, nyelvtani elemzés és tanulási AI még nincs; ezek a Milestone 5 határán túl vannak.
+
+## Adatvédelem és perzisztencia
+
+- nincs Supabase Storage, audio bucket, fájlrendszeres mentés vagy nyilvános audio URL;
+- a szerver a rövid klipet memóriában adja tovább az STT-szolgáltatónak, majd a kérés életciklusával elengedi;
+- nyers audio, waveform, teljes fájl és provider raw payload nem kerül adatbázisba vagy logba;
+- `learning_sessions` csak inputtípust, kiválasztott időtartamot, státuszt és időbélyegeket kap;
+- `processing_attempts` csak stage/provider/status/latency/normalizált hibakód adatot kap;
+- a transcript jelölt és az ellenőrzött/javított forrásszöveg helyi, átmeneti állapot marad; `verified_source_text` továbbra is `null`;
+- `save_source=false` és `source_retention_status=not_stored` az alapértelmezés;
+- 30 másodperc termék-, adatvédelmi-, költség- és kockázati korlát, nem jogi safe harbour.
+
+Az OpenAI oldali adatkezelésre nem teszünk általános megőrzésmentességi ígéretet. Nyilvános indulás előtt az adott szerződés, projektbeállítás és aktuális szolgáltatói adatmegőrzési feltételek külön felülvizsgálata szükséges.
+
+## Általánosított adatmodell
+
+- `learning_sessions` — privát, minimalizált munkamenet-metaadat;
+- `processing_attempts` — transzkripciós és későbbi feldolgozási operatív metaadat;
+- `learning_results` — későbbi validált származtatott eredmény;
+- `user_phrasebook` — privát, kifejezetten mentett kifejezések; session törlésekor a hivatkozás `SET NULL`;
+- `learning_progress` — tulajdonos- és session-konzisztens haladás.
+
+Az M4 migráció tulajdonoshoz kötött, validált RPC-kkel kezeli az STT-életciklust, és privát-alfa 20 kísérlet/óra korlátot alkalmaz. Minden alkalmazástábla RLS-védett. A `songs`, `recognition_attempts`, `lyrics_versions`, `lessons`, `user_songs` és `user_song_progress` legacy struktúraként megmarad, de az aktív BYOC runtime nem használja.
 
 ## Környezeti változók
-
-Az `.env.local` fájlban add meg:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+OPENAI_API_KEY=
+SPEECH_TO_TEXT_PROVIDER=openai
 ```
 
-Mindkét változó browser-safe Supabase projektadat. Titkos vagy service-role kulcsot ne adj `NEXT_PUBLIC_` nevű változóhoz. A Milestone 1 alkalmazáskódja nem igényel service-role kulcsot.
+Az `OPENAI_API_KEY` kizárólag szerveroldali változó; soha ne kapjon `NEXT_PUBLIC_` prefixet. Service-role kulcs nem szükséges és nem szerepel a kliensben.
 
 ## Helyi Supabase
 
@@ -69,25 +89,15 @@ Mindkét változó browser-safe Supabase projektadat. Titkos vagy service-role k
 npm run db:start
 npm run db:reset
 npm run db:test
-npm run db:types
 npx supabase db lint --local --level warning
 npx supabase migration list --local
+npm run db:types
+npm run db:stop
 ```
 
-A `db:start` kimenetéből a helyi API URL-t és publishable kulcsot másold az ignorált `.env.local` megfelelő változóiba. A migrációk a `supabase/migrations/`, az RLS-tesztek a `supabase/tests/database/` alatt találhatók. A pgTAP csomag a legacy és a Milestone 3 tulajdonosi szabályokat, szerver-kezelt írásvédelmet, kaszkádokat és forrástörlést is ellenőrzi. A `db:types` az alkalmazott helyi sémából frissíti a checked-in `lib/supabase/database.types.ts` fájlt.
+A migrációk a `supabase/migrations/`, a pgTAP tesztek a `supabase/tests/database/` alatt vannak. A generált típus a `lib/supabase/database.types.ts` fájlba kerül.
 
-## Cloud Supabase bekötése
-
-1. Hozz létre egy Supabase projektet.
-2. Futtasd a `npx supabase login`, majd a `npx supabase link --project-ref <project-ref>` parancsot.
-3. Ellenőrizd a migrációkat: `npx supabase db push --dry-run`, majd alkalmazd: `npx supabase db push`.
-4. A projekt Connect paneljéből add meg a Project URL-t és a publishable kulcsot a deployment környezetben.
-5. Állítsd be a production Site URL-t és engedélyezd a `/auth/confirm` redirectet.
-6. Az e-mailes regisztráció Confirm signup sablonjában használd a szerveroldali linket: `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email`.
-
-Valódi projektkulcsot vagy adatbázis-jelszót ne commitolj.
-
-## Ellenőrzés
+## Tesztelés és provider smoke
 
 ```bash
 npm run lint
@@ -95,11 +105,12 @@ npm run typecheck
 npm test
 npm run test:e2e
 npm run build
-npm run db:test
 ```
 
-Az E2E auth-forgatókönyv kizárólag a Playwright fejlesztői szerverén engedélyezett, szerveroldali teszt-cookie-t használ. Nem kapcsolódik cloud projekthez és production buildben nem aktiválható.
+A unit/component/E2E tesztek determinisztikus `SpeechToTextProvider` implementációt és generált hangot használnak, ezért nem költenek OpenAI-kreditet. A Playwright mock csak nem-production környezetben, `CANTU_E2E_STT_MOCK=1` mellett aktiválható.
 
-## Megőrzött alap és halasztott funkciók
+Valós smoke teszthez állíts be saját, ignorált `.env.local` fájlban `OPENAI_API_KEY` értéket, indítsd az alkalmazást és egy hitelesített fiókkal küldj kifejezetten erre készített saját olasz beszédfelvételt. Ne használj kereskedelmi zenét; a kulcsot és a felvételt ne commitold.
 
-A Supabase Auth, SSR-határok és a korábbi migráció változatlanul megmarad. A „Saját tanulásaim” már az általánosított `learning_sessions` és `learning_progress` modellből olvas, és tulajdonosi mentést/törlést támogat. Az eredeti forrás továbbra sem kerül tartós tárolásra. Nincs mikrofonrögzítés, MediaRecorder, audio Storage, STT provider, AI-elemzés, nyilvános megosztás vagy billing.
+## Kifejezetten halasztva
+
+Nincs LanguageAnalysisProvider, magyar fordítás, szókincs- vagy nyelvtani AI, kiejtésértékelés, TTS, automatikus phrasebook-generálás, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.

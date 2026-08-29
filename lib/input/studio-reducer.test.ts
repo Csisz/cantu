@@ -19,7 +19,7 @@ describe("Input Studio domain", () => {
     });
     expect(confirmation).toEqual({
       status: "source_confirmation",
-      source: { kind: "text", text: "Ci vediamo domani?" },
+      source: { kind: "text", text: "Ci vediamo domani?", sourceStatus: "text_direct" },
     });
     const preview = inputStudioReducer(confirmation, { type: "CONFIRM_SOURCE" });
     expect(preview.status).toBe("learning_preview");

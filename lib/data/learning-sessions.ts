@@ -16,7 +16,10 @@ import {
   hasE2ELearningSession,
   listE2ELearningSessions,
   saveE2ELearningSession,
+  startE2ETranscriptionSession,
+  updateE2ETranscriptionStatus,
 } from "./e2e-learning-store";
+import { TranscriptionError } from "@/lib/providers/speech/types";
 
 export type LearningHistorySnapshot =
   | { status: "unavailable"; items: [] }
@@ -116,6 +119,99 @@ export async function clearLearningSessionSource(auth: AuthContext, sessionId: s
   if (error) {
     console.error("Cantu source clear failed", { code: error.code });
     throw new Error("Source clear failed");
+  }
+  return data;
+}
+
+export async function startTranscriptionSession(
+  auth: AuthContext,
+  input: {
+    sourceType: "microphone" | "audio_file";
+    durationMs: number;
+    provider: string;
+  },
+) {
+  const authenticated = requireAuthenticated(auth);
+  if (isE2EAuthMockEnabled()) {
+    return startE2ETranscriptionSession(authenticated.user.id, input.sourceType, input.durationMs);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("start_transcription_session", {
+    p_input_type: input.sourceType,
+    p_source_duration_ms: input.durationMs,
+    p_provider: input.provider,
+  });
+  if (error) {
+    if (error.message.includes("transcription_rate_limited")) {
+      throw new TranscriptionError("rate_limited");
+    }
+    console.error("Cantu transcription start failed", { code: error.code });
+    throw new TranscriptionError("transcription_failed");
+  }
+  const row = data[0];
+  if (!row) throw new TranscriptionError("transcription_failed");
+  return {
+    sessionId: row.learning_session_id,
+    attemptId: row.processing_attempt_id,
+  };
+}
+
+export async function completeTranscriptionAttempt(
+  auth: AuthContext,
+  input: {
+    sessionId: string;
+    attemptId: string;
+    status: "succeeded" | "failed";
+    latencyMs: number;
+    errorCode?: string;
+  },
+) {
+  const authenticated = requireAuthenticated(auth);
+  const sessionId = sessionIdSchema.parse(input.sessionId);
+  const attemptId = sessionIdSchema.parse(input.attemptId);
+  if (isE2EAuthMockEnabled()) {
+    return updateE2ETranscriptionStatus(
+      authenticated.user.id,
+      sessionId,
+      input.status === "succeeded" ? "stt_unverified" : "failed",
+    );
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("complete_transcription_attempt", {
+    p_session_id: sessionId,
+    p_attempt_id: attemptId,
+    p_status: input.status,
+    p_latency_ms: Math.max(0, Math.round(input.latencyMs)),
+    p_error_code: input.errorCode,
+  });
+  if (error || !data) {
+    console.error("Cantu transcription completion failed", { code: error?.code });
+    return false;
+  }
+  return true;
+}
+
+export async function verifyTranscriptCandidate(
+  auth: AuthContext,
+  sessionIdInput: string,
+  status: "user_verified" | "user_edited",
+) {
+  const authenticated = requireAuthenticated(auth);
+  const sessionId = sessionIdSchema.parse(sessionIdInput);
+  if (isE2EAuthMockEnabled()) {
+    return updateE2ETranscriptionStatus(authenticated.user.id, sessionId, status);
+  }
+
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("verify_transcript_candidate", {
+    p_session_id: sessionId,
+    p_source_status: status,
+  });
+  if (error) {
+    console.error("Cantu transcript verification failed", { code: error.code });
+    return false;
   }
   return data;
 }
