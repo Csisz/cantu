@@ -3,6 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { isE2EAuthMockEnabled } from "@/lib/env/server";
 import type { AuthUserDTO } from "./types";
+import { clearE2ELearningSessions } from "@/lib/data/e2e-learning-store";
 
 const COOKIE_NAME = "cantu-e2e-auth";
 const TEST_USER: AuthUserDTO = {
@@ -18,6 +19,7 @@ export async function getE2EAuthUser() {
 
 export async function establishE2EAuthSession() {
   if (!isE2EAuthMockEnabled()) return false;
+  clearE2ELearningSessions(TEST_USER.id);
   (await cookies()).set(COOKIE_NAME, "authenticated", {
     httpOnly: true,
     sameSite: "lax",
@@ -29,6 +31,7 @@ export async function establishE2EAuthSession() {
 
 export async function clearE2EAuthSession() {
   if (!isE2EAuthMockEnabled()) return false;
+  clearE2ELearningSessions(TEST_USER.id);
   (await cookies()).delete(COOKIE_NAME);
   return true;
 }

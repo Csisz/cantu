@@ -10,7 +10,7 @@ function watchRuntime(page: Page) {
   return () => ({ pageErrors, consoleErrors });
 }
 
-function createGeneratedToneWav(durationSeconds = 40, sampleRate = 8_000) {
+function createGeneratedToneWav(durationSeconds = 31, sampleRate = 8_000) {
   const sampleCount = durationSeconds * sampleRate;
   const buffer = new ArrayBuffer(44 + sampleCount * 2);
   const view = new DataView(buffer);
@@ -43,6 +43,14 @@ function createGeneratedToneWav(durationSeconds = 40, sampleRate = 8_000) {
 
 async function expectNoHorizontalOverflow(page: Page) {
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+}
+
+async function signInWithDeterministicAuth(page: Page) {
+  await page.goto("/app");
+  await page.getByLabel("E-mail-cím").fill("tanulo@example.com");
+  await page.getByLabel("Jelszó").fill("biztonsagos-jelszo");
+  await page.getByRole("button", { name: "Bejelentkezés" }).click();
+  await expect(page.getByRole("button", { name: "Kijelentkezés" })).toBeVisible();
 }
 
 test("landing to text confirmation and learning preview", async ({ page }) => {
@@ -158,6 +166,69 @@ test("authentication boundary exposes empty learning space and signs out", async
   await expect(page.getByRole("button", { name: "Kijelentkezés" })).toBeVisible();
   await page.getByRole("button", { name: "Kijelentkezés" }).click();
   await expect(page.getByRole("button", { name: "Bejelentkezés" })).toBeVisible();
+
+  const errors = runtime();
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleErrors).toEqual([]);
+});
+
+test("authenticated text session saves metadata only and can be deleted", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  const privateText = "Possiamo parlarne domani?";
+  const postBodies: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") postBodies.push(request.postData() ?? "");
+  });
+
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("tab", { name: "Szöveg" }).click();
+  await page.getByLabel("Olasz szöveg").fill(privateText);
+  await page.getByRole("button", { name: "Ezt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await page.getByRole("button", { name: "Mentés a tanulásaim közé" }).click();
+  await expect(page.getByRole("button", { name: "Elmentve" })).toBeVisible();
+
+  const history = page.getByRole("region", { name: "Saját tanulásaim" });
+  await expect(history.getByText("Szöveg", { exact: true })).toBeVisible();
+  await expect(history.getByText(/25 karakter/)).toBeVisible();
+  await expect(history.getByText(privateText)).toHaveCount(0);
+  expect(postBodies.some((body) => body.includes(privateText))).toBe(false);
+
+  await history.getByRole("button", { name: "Törlés" }).click();
+  await history.getByRole("button", { name: "Igen, törlöm" }).click();
+  await expect(history.getByRole("heading", { name: "Még nincs elmentett tanulásod." })).toBeVisible();
+
+  const errors = runtime();
+  expect(errors.pageErrors).toEqual([]);
+  expect(errors.consoleErrors).toEqual([]);
+});
+
+test("authenticated audio save persists selected duration without source content", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  const localFileName = "never-upload-this-name.wav";
+  const postBodies: string[] = [];
+  page.on("request", (request) => {
+    if (request.method() === "POST") postBodies.push(request.postData() ?? "");
+  });
+
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("tab", { name: "Hangfájl" }).click();
+  await page.getByLabel("Hangfájl kiválasztása").setInputFiles({
+    name: localFileName,
+    mimeType: "audio/wav",
+    buffer: createGeneratedToneWav(),
+  });
+  await expect(page.getByRole("img", { name: /Helyi hullámforma/i })).toBeVisible({ timeout: 15_000 });
+  await page.getByRole("button", { name: "Ezt a részt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await page.getByRole("button", { name: "Mentés a tanulásaim közé" }).click();
+  await expect(page.getByRole("button", { name: "Elmentve" })).toBeVisible();
+
+  const history = page.getByRole("region", { name: "Saját tanulásaim" });
+  await expect(history.getByText("Hangrészlet", { exact: true })).toBeVisible();
+  await expect(history.getByText(/30\.0 mp/)).toBeVisible();
+  await expect(history.getByText(localFileName)).toHaveCount(0);
+  expect(postBodies.some((body) => body.includes(localFileName) || body.includes("RIFF"))).toBe(false);
 
   const errors = runtime();
   expect(errors.pageErrors).toEqual([]);

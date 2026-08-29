@@ -1,4 +1,6 @@
-export const MAX_AUDIO_SELECTION_MS = 30_000;
+import { MAX_AUDIO_SELECTION_MS } from "./limits";
+
+export { MAX_AUDIO_SELECTION_MS } from "./limits";
 export const TARGET_MIN_AUDIO_SELECTION_MS = 1_000;
 
 export type AudioSelection = {

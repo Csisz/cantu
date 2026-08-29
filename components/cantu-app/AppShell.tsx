@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { AuthContext } from "@/lib/auth/types";
-import type { LibrarySnapshot } from "@/lib/data/library";
+import type { LearningHistorySnapshot } from "@/lib/data/learning-sessions";
+import { saveLearningSessionAction } from "@/app/app/learning-actions";
 import type { InputMode } from "@/lib/input/types";
 import { AccountSection } from "./AccountSection";
 import { InputStudio } from "./InputStudio";
@@ -10,11 +11,11 @@ import styles from "./app.module.css";
 type AppShellProps = {
   initialMode: InputMode;
   auth: AuthContext;
-  library: LibrarySnapshot;
+  history: LearningHistorySnapshot;
   authNotice?: string;
 };
 
-export function AppShell({ initialMode, auth, library, authNotice }: AppShellProps) {
+export function AppShell({ initialMode, auth, history, authNotice }: AppShellProps) {
   return (
     <main className={styles.appPage}>
       <header className={styles.appHeader}>
@@ -41,8 +42,12 @@ export function AppShell({ initialMode, auth, library, authNotice }: AppShellPro
             A pontos forrást mindig te erősíted meg.
           </p>
         </div>
-        <InputStudio initialMode={initialMode} />
-        <AccountSection auth={auth} library={library} notice={authNotice} />
+        <InputStudio
+          initialMode={initialMode}
+          authenticated={auth.status === "authenticated"}
+          saveAction={saveLearningSessionAction}
+        />
+        <AccountSection auth={auth} history={history} notice={authNotice} />
       </section>
       <footer className={styles.appFooter}>
         <span><i aria-hidden="true" /> Helyi Input Studio · privát forráskezelés</span>

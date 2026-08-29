@@ -1,6 +1,7 @@
 import type { InputMode, InputStudioAction, InputStudioState } from "./types";
+import { TEXT_INPUT_MAX_CHARACTERS } from "./limits";
 
-export const TEXT_INPUT_MAX_CHARACTERS = 2_000;
+export { TEXT_INPUT_MAX_CHARACTERS } from "./limits";
 
 export function normalizeTextInput(text: string) {
   return text.trim().slice(0, TEXT_INPUT_MAX_CHARACTERS);

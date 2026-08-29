@@ -1,4 +1,5 @@
 import type { LearningSource } from "@/lib/input/types";
+import { SaveLearningControl, type PersistenceAction } from "./SaveLearningControl";
 import styles from "./app.module.css";
 
 const previewSections = [
@@ -12,9 +13,13 @@ const previewSections = [
 export function LearningPreview({
   source,
   onStartOver,
+  authenticated,
+  saveAction,
 }: {
   source: LearningSource;
   onStartOver: () => void;
+  authenticated: boolean;
+  saveAction: PersistenceAction;
 }) {
   return (
     <section className={styles.learningPreview} aria-labelledby="learning-preview-title">
@@ -31,6 +36,7 @@ export function LearningPreview({
           </article>
         ))}
       </div>
+      <SaveLearningControl source={source} authenticated={authenticated} action={saveAction} />
       <button className={styles.mainAction} type="button" onClick={onStartOver}>Új forrást hozok</button>
     </section>
   );

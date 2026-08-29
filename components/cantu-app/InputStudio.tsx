@@ -10,8 +10,17 @@ import { ListenInput } from "./listen/ListenInput";
 import { SourceConfirmation } from "./SourceConfirmation";
 import { TextInput } from "./text/TextInput";
 import styles from "./app.module.css";
+import type { PersistenceAction } from "./SaveLearningControl";
 
-export function InputStudio({ initialMode }: { initialMode: InputMode }) {
+export function InputStudio({
+  initialMode,
+  authenticated,
+  saveAction,
+}: {
+  initialMode: InputMode;
+  authenticated: boolean;
+  saveAction: PersistenceAction;
+}) {
   const [state, dispatch] = useReducer(
     inputStudioReducer,
     initialMode,
@@ -57,6 +66,8 @@ export function InputStudio({ initialMode }: { initialMode: InputMode }) {
         <LearningPreview
           source={state.source}
           onStartOver={() => dispatch({ type: "START_OVER" })}
+          authenticated={authenticated}
+          saveAction={saveAction}
         />
       ) : null}
     </div>

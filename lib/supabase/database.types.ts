@@ -34,6 +34,142 @@ export type Database = {
   }
   public: {
     Tables: {
+      learning_progress: {
+        Row: {
+          created_at: string
+          last_opened_at: string
+          percent_complete: number
+          recall_score: number | null
+          session_id: string
+          stage: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          last_opened_at?: string
+          percent_complete?: number
+          recall_score?: number | null
+          session_id: string
+          stage?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          last_opened_at?: string
+          percent_complete?: number
+          recall_score?: number | null
+          session_id?: string
+          stage?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_progress_session_owner_fkey"
+            columns: ["session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "learning_sessions"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
+      learning_results: {
+        Row: {
+          created_at: string
+          generator_version: string | null
+          id: string
+          result_json: Json
+          schema_version: string
+          session_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          generator_version?: string | null
+          id?: string
+          result_json: Json
+          schema_version: string
+          session_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          generator_version?: string | null
+          id?: string
+          result_json?: Json
+          schema_version?: string
+          session_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "learning_results_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: true
+            referencedRelation: "learning_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      learning_sessions: {
+        Row: {
+          content_kind: string | null
+          created_at: string
+          explanation_language: string
+          id: string
+          input_type: string
+          save_source: boolean
+          source_char_count: number | null
+          source_deleted_at: string | null
+          source_duration_ms: number | null
+          source_fingerprint: string | null
+          source_language: string
+          source_retention_status: string
+          source_status: string
+          updated_at: string
+          user_id: string
+          verified_source_text: string | null
+        }
+        Insert: {
+          content_kind?: string | null
+          created_at?: string
+          explanation_language?: string
+          id?: string
+          input_type: string
+          save_source?: boolean
+          source_char_count?: number | null
+          source_deleted_at?: string | null
+          source_duration_ms?: number | null
+          source_fingerprint?: string | null
+          source_language?: string
+          source_retention_status?: string
+          source_status?: string
+          updated_at?: string
+          user_id: string
+          verified_source_text?: string | null
+        }
+        Update: {
+          content_kind?: string | null
+          created_at?: string
+          explanation_language?: string
+          id?: string
+          input_type?: string
+          save_source?: boolean
+          source_char_count?: number | null
+          source_deleted_at?: string | null
+          source_duration_ms?: number | null
+          source_fingerprint?: string | null
+          source_language?: string
+          source_retention_status?: string
+          source_status?: string
+          updated_at?: string
+          user_id?: string
+          verified_source_text?: string | null
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           created_at: string
@@ -124,6 +260,50 @@ export type Database = {
             columns: ["song_id"]
             isOneToOne: false
             referencedRelation: "songs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processing_attempts: {
+        Row: {
+          confidence: number | null
+          created_at: string
+          error_code: string | null
+          id: string
+          latency_ms: number | null
+          provider: string | null
+          session_id: string
+          stage: string
+          status: string
+        }
+        Insert: {
+          confidence?: number | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          latency_ms?: number | null
+          provider?: string | null
+          session_id: string
+          stage: string
+          status?: string
+        }
+        Update: {
+          confidence?: number | null
+          created_at?: string
+          error_code?: string | null
+          id?: string
+          latency_ms?: number | null
+          provider?: string | null
+          session_id?: string
+          stage?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processing_attempts_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "learning_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -250,6 +430,50 @@ export type Database = {
         }
         Relationships: []
       }
+      user_phrasebook: {
+        Row: {
+          created_at: string
+          id: string
+          italian_chunk: string
+          last_reviewed_at: string | null
+          meaning_hu: string
+          note_hu: string | null
+          register: string | null
+          source_session_id: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          italian_chunk: string
+          last_reviewed_at?: string | null
+          meaning_hu: string
+          note_hu?: string | null
+          register?: string | null
+          source_session_id?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          italian_chunk?: string
+          last_reviewed_at?: string | null
+          meaning_hu?: string
+          note_hu?: string | null
+          register?: string | null
+          source_session_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_phrasebook_source_owner_fkey"
+            columns: ["source_session_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "learning_sessions"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       user_song_progress: {
         Row: {
           created_at: string
@@ -332,7 +556,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      clear_learning_session_source: {
+        Args: { target_session_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

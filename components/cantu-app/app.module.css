@@ -1713,6 +1713,69 @@
   font-weight: 800;
 }
 
+.savePanel {
+  width: min(680px, 100%);
+  margin: 24px auto 0;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--purple) 30%, var(--line));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--purple) 6%, var(--glass-strong));
+}
+
+.savePanel strong,
+.savePanel p {
+  display: block;
+}
+
+.savePanel p {
+  margin: 7px auto 0;
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+  line-height: 1.5;
+}
+
+.savePanel .mainAction,
+.savePanel .secondaryAction {
+  width: fit-content;
+  display: inline-flex;
+  justify-content: center;
+  margin-top: 14px;
+}
+
+.deleteButton,
+.deleteConfirm button {
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 0 11px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.deleteConfirm {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+
+.deleteConfirm span,
+.deleteConfirm small {
+  width: 100%;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  text-align: right;
+}
+
+.deleteConfirm small {
+  color: var(--danger);
+}
+
 @media (max-width: 680px) {
   .modeTabs {
     gap: 4px;

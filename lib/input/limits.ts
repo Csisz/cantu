@@ -1,0 +1,2 @@
+export const MAX_AUDIO_SELECTION_MS = 30_000;
+export const TEXT_INPUT_MAX_CHARACTERS = 2_000;

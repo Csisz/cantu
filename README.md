@@ -28,13 +28,29 @@ Az alkalmazás fő útvonalai:
 
 Supabase-konfiguráció nélkül a landing és a teljes helyi Input Studio továbbra is működik. A fiók- és perzisztenciafelület ilyenkor biztonságos konfigurálatlan állapotot mutat.
 
-## Milestone 2 működési határa
+## Milestone 3 — általánosított perzisztencia
 
 - A hangfájl dekódolása, hullámformája, legfeljebb 30 másodperces kijelölése és előnézete kizárólag a böngészőben történik.
-- A teljes hangfájlt az Input Studio nem tölti fel, és a kijelölt részletet sem küldi el ebben a mérföldkőben.
-- A szöveges forrás legfeljebb 2 000 karakter; a megerősítési és tanulási vázlat UI-helyi, nincs AI-elemzés vagy automatikus mentés.
+- A teljes hangfájlt és a kijelölt részlet hangadatait az Input Studio nem tölti fel. Nincs audio Storage vagy feltöltési végpont.
+- A szöveges forrás legfeljebb 2 000 karakter; a forrásszöveg helyi marad, nincs AI-elemzés vagy automatikus mentés.
+- Bejelentkezett felhasználó a tanulási vázlatnál kifejezetten menthet egy metadata-only munkamenetet. Szövegnél csak a karakterszám, hangnál csak a kijelölt részlet időtartama kerül mentésre.
+- A forrásmegőrzés alapállapota `not_stored`, a `save_source` alapértéke `false`, a `verified_source_text` pedig `null`. A DAL külön, tulajdonoshoz kötött forrástörlési útvonalat biztosít a későbbi ideiglenes feldolgozáshoz.
 - A Listen mód egy biztonságos interakciós előnézet: valós mikrofonrögzítés még nincs.
-- Valós STT, LLM-alapú tanulási elemzés, audio Storage és általánosított perzisztencia későbbi mérföldkő feladata.
+- Valós STT, LLM-alapú tanulási elemzés és audioátvitel későbbi mérföldkő feladata.
+
+### Új privát táblák
+
+- `learning_sessions` — a felhasználó által kifejezetten mentett, minimalizált munkamenet-metaadat;
+- `processing_attempts` — későbbi szerveroldali feldolgozások operatív állapota, kliensről nem írható;
+- `learning_results` — későbbi validált, származtatott eredmény, kliensről nem írható;
+- `user_phrasebook` — privát, kifejezetten mentett kifejezések; session törlésekor a forráshivatkozás `SET NULL`;
+- `learning_progress` — tulajdonos- és session-konzisztens általános haladás.
+
+Mindegyik új alkalmazástábla RLS-védett. A normál böngészőkliens tulajdonosi azonosítóját a szerver az autentikált sessionből származtatja, az RLS pedig második védelmi réteg. Nincs globális forrás-deduplikáció, kereshető forráskatalógus vagy nyilvános felhasználói tartalom.
+
+### Legacy stratégia
+
+A `songs`, `recognition_attempts`, `lyrics_versions`, `lessons`, `user_songs` és `user_song_progress` táblák átmenetileg, változatlan történeti struktúraként megmaradnak. Az aktív BYOC runtime nem olvassa és nem írja őket, automatikus tartalmi átmigrálás és destruktív táblaeldobás nincs.
 
 ## Környezeti változók
 
@@ -54,9 +70,11 @@ npm run db:start
 npm run db:reset
 npm run db:test
 npm run db:types
+npx supabase db lint --local --level warning
+npx supabase migration list --local
 ```
 
-A `db:start` kimenetéből a helyi API URL-t és publishable kulcsot másold az ignorált `.env.local` megfelelő változóiba. A migrációk a `supabase/migrations/`, az RLS-tesztek a `supabase/tests/database/` alatt találhatók. A `db:types` az alkalmazott helyi sémából frissíti a checked-in `lib/supabase/database.types.ts` fájlt.
+A `db:start` kimenetéből a helyi API URL-t és publishable kulcsot másold az ignorált `.env.local` megfelelő változóiba. A migrációk a `supabase/migrations/`, az RLS-tesztek a `supabase/tests/database/` alatt találhatók. A pgTAP csomag a legacy és a Milestone 3 tulajdonosi szabályokat, szerver-kezelt írásvédelmet, kaszkádokat és forrástörlést is ellenőrzi. A `db:types` az alkalmazott helyi sémából frissíti a checked-in `lib/supabase/database.types.ts` fájlt.
 
 ## Cloud Supabase bekötése
 
@@ -82,6 +100,6 @@ npm run db:test
 
 Az E2E auth-forgatókönyv kizárólag a Playwright fejlesztői szerverén engedélyezett, szerveroldali teszt-cookie-t használ. Nem kapcsolódik cloud projekthez és production buildben nem aktiválható.
 
-## Megőrzött Milestone 1 alap
+## Megőrzött alap és halasztott funkciók
 
-A Supabase Auth, migrációk, RLS és a korábbi könyvtár/haladás perzisztenciaalapja változatlanul megmarad. A látható felület már „Saját tanulásaim” néven hivatkozik rá, de a dal-központú adatbázisséma migrációja szándékosan a következő mérföldkőre marad. Nincs mikrofonrögzítés, audio Storage, STT provider, AI-elemzés, nyilvános megosztás vagy billing.
+A Supabase Auth, SSR-határok és a korábbi migráció változatlanul megmarad. A „Saját tanulásaim” már az általánosított `learning_sessions` és `learning_progress` modellből olvas, és tulajdonosi mentést/törlést támogat. Az eredeti forrás továbbra sem kerül tartós tárolásra. Nincs mikrofonrögzítés, MediaRecorder, audio Storage, STT provider, AI-elemzés, nyilvános megosztás vagy billing.
