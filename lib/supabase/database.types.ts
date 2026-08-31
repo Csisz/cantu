@@ -572,6 +572,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      complete_pronunciation_feedback: {
+        Args: {
+          p_attempt_id: string
+          p_error_code?: string
+          p_latency_ms: number
+          p_session_id: string
+          p_status: string
+        }
+        Returns: boolean
+      }
       complete_transcription_attempt: {
         Args: {
           p_attempt_id: string
@@ -609,6 +619,10 @@ export type Database = {
           learning_session_id: string
           processing_attempt_id: string
         }[]
+      }
+      start_pronunciation_feedback: {
+        Args: { p_provider: string; p_session_id: string }
+        Returns: string
       }
       start_transcription_session: {
         Args: {

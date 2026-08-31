@@ -56,7 +56,7 @@ async function reachRecall() {
   expect(screen.getByText("Új tanítási példák · nem a forrás részei")).toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Jöhet a próba" }));
   await screen.findByRole("heading", { name: "Mondd ki te is" });
-  fireEvent.click(screen.getByRole("button", { name: "Kimondtam" }));
+  fireEvent.click(screen.getByRole("button", { name: "Most kihagyom" }));
   await screen.findByRole("heading", { name: "Emlékszel?" });
 }
 
@@ -96,15 +96,16 @@ describe("LearningPlayer", () => {
     expect(screen.getByText("vederti domani")).toBeVisible();
   });
 
-  it("shows self-practice guidance and never claims pronunciation scoring", async () => {
+  it("shows interactive shadowing and local reference without claiming pronunciation scoring", async () => {
     render(<LearningPlayer sessionId={sessionId} analysis={analysis()} localPlaybackUrl="blob:cantu-local" />);
     await reachChunks();
     fireEvent.click(screen.getByRole("button", { name: "Mutasd a következőt" }));
     fireEvent.click(screen.getByRole("button", { name: "Ezt értem" }));
     fireEvent.click(await screen.findByRole("button", { name: "Jöhet a próba" }));
     expect(await screen.findByRole("heading", { name: "Mondd ki te is" })).toBeInTheDocument();
-    expect(screen.getByText(/nem hallgat bele és nem értékeli/i)).toBeVisible();
     expect(screen.getByLabelText("A helyi forrásrészlet lejátszása")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Felveszem" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Most kihagyom" })).toBeVisible();
     expect(screen.queryByText(/kiejtési pontszám/i)).not.toBeInTheDocument();
   });
 

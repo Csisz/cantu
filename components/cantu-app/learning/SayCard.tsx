@@ -1,22 +1,27 @@
 import type { LearningAnalysis } from "@/lib/analysis/schema";
-import { sayPracticeText } from "@/lib/learning/player";
+import { sayPracticeTarget } from "@/lib/learning/player";
 import styles from "../app.module.css";
+import { ShadowingPractice } from "./ShadowingPractice";
 
 export function SayCard({
   analysis,
+  sessionId,
+  authenticated,
   localPlaybackUrl,
   onNext,
 }: {
   analysis: LearningAnalysis;
+  sessionId: string;
+  authenticated: boolean;
   localPlaybackUrl?: string;
   onNext: () => void;
 }) {
-  const phrase = sayPracticeText(analysis)!;
+  const target = sayPracticeTarget(analysis)!;
   return (
     <section className={styles.lessonCard} aria-labelledby="lesson-say-title">
-      <span className={styles.lessonEyebrow}>Saját gyakorlás · nincs automatikus pontozás</span>
+      <span className={styles.lessonEyebrow}>Shadowing · érthetőség és magabiztos használat</span>
       <h2 id="lesson-say-title" tabIndex={-1}>Mondd ki te is</h2>
-      <blockquote className={styles.sayPhrase} lang="it">{phrase}</blockquote>
+      <blockquote className={styles.sayPhrase} lang="it">{target.text}</blockquote>
       {analysis.pronunciation ? (
         <div className={styles.sayGuidance}>
           <strong>Figyelj erre:</strong>
@@ -28,12 +33,16 @@ export function SayCard({
       )}
       {localPlaybackUrl ? (
         <div className={styles.localReplay}>
-          <span>Az aktív munkamenet helyi hangrészlete</span>
+          <span>Eredeti helyi referencia · csak ebben a böngészőmunkamenetben</span>
           <audio controls src={localPlaybackUrl} aria-label="A helyi forrásrészlet lejátszása" />
         </div>
       ) : null}
-      <p className={styles.selfPracticeNote}>A Cantu most nem hallgat bele és nem értékeli a kiejtésedet.</p>
-      <button className={styles.lessonPrimary} type="button" onClick={onNext}>Kimondtam</button>
+      <ShadowingPractice
+        sessionId={sessionId}
+        chunkIndex={target.chunkIndex}
+        authenticated={authenticated}
+        onNext={onNext}
+      />
     </section>
   );
 }

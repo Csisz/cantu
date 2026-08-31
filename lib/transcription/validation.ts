@@ -5,7 +5,7 @@ import { TranscriptionError } from "@/lib/providers/speech/types";
 export const MAX_TRANSCRIPTION_CLIP_BYTES = 2 * 1024 * 1024;
 export const MAX_TRANSCRIPTION_REQUEST_BYTES = MAX_TRANSCRIPTION_CLIP_BYTES + 64 * 1024;
 
-const allowedMimeBases = new Set([
+export const ALLOWED_AUDIO_MIME_BASES = new Set([
   "audio/wav",
   "audio/x-wav",
   "audio/webm",
@@ -19,7 +19,7 @@ const metadataSchema = z.object({
   durationMs: z.coerce.number().int().min(1).max(MAX_AUDIO_SELECTION_MS),
 });
 
-function mimeBase(mimeType: string) {
+export function audioMimeBase(mimeType: string) {
   return mimeType.split(";", 1)[0]?.trim().toLowerCase() ?? "";
 }
 
@@ -27,8 +27,8 @@ function hasAscii(bytes: Uint8Array, offset: number, value: string) {
   return value.split("").every((character, index) => bytes[offset + index] === character.charCodeAt(0));
 }
 
-function hasSupportedSignature(bytes: Uint8Array, mimeType: string) {
-  const base = mimeBase(mimeType);
+export function hasSupportedAudioSignature(bytes: Uint8Array, mimeType: string) {
+  const base = audioMimeBase(mimeType);
   if (base === "audio/wav" || base === "audio/x-wav") {
     return bytes.length >= 44 && hasAscii(bytes, 0, "RIFF") && hasAscii(bytes, 8, "WAVE");
   }
@@ -44,7 +44,7 @@ function hasSupportedSignature(bytes: Uint8Array, mimeType: string) {
 }
 
 export function getWavDurationMs(bytes: Uint8Array) {
-  if (!hasSupportedSignature(bytes, "audio/wav")) throw new TranscriptionError("invalid_audio");
+  if (!hasSupportedAudioSignature(bytes, "audio/wav")) throw new TranscriptionError("invalid_audio");
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let byteRate = 0;
   let dataSize = 0;
@@ -84,11 +84,11 @@ export async function validateTranscriptionFormData(formData: FormData): Promise
   const clip = formData.get("clip");
   if (!(clip instanceof File) || clip.size === 0) throw new TranscriptionError("invalid_audio");
   if (clip.size > MAX_TRANSCRIPTION_CLIP_BYTES) throw new TranscriptionError("too_large");
-  if (!allowedMimeBases.has(mimeBase(clip.type))) throw new TranscriptionError("unsupported_format");
+  if (!ALLOWED_AUDIO_MIME_BASES.has(audioMimeBase(clip.type))) throw new TranscriptionError("unsupported_format");
 
   const bytes = new Uint8Array(await clip.arrayBuffer());
-  if (!hasSupportedSignature(bytes, clip.type)) throw new TranscriptionError("invalid_audio");
-  if (mimeBase(clip.type).includes("wav")) {
+  if (!hasSupportedAudioSignature(bytes, clip.type)) throw new TranscriptionError("invalid_audio");
+  if (audioMimeBase(clip.type).includes("wav")) {
     const actualDurationMs = getWavDurationMs(bytes);
     if (actualDurationMs > MAX_AUDIO_SELECTION_MS) throw new TranscriptionError("too_long");
     if (Math.abs(actualDurationMs - parsed.data.durationMs) > 750) {

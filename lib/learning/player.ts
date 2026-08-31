@@ -76,11 +76,13 @@ export const phraseSaveReferenceSchema = z
 export type ProgressMutation = z.infer<typeof progressMutationSchema>;
 export type PhraseSaveReference = z.infer<typeof phraseSaveReferenceSchema>;
 
+export function sayPracticeTarget(analysis: LearningAnalysis) {
+  const chunk = analysis.chunks[0];
+  return chunk ? { text: chunk.sourceText, chunkIndex: 0 } : null;
+}
+
 export function sayPracticeText(analysis: LearningAnalysis) {
-  return analysis.chunks[0]?.sourceText
-    ?? analysis.pronunciation?.focus[0]
-    ?? analysis.transfer[0]?.italian
-    ?? null;
+  return sayPracticeTarget(analysis)?.text ?? null;
 }
 
 export function lessonStageSequence(analysis: LearningAnalysis): LessonStage[] {

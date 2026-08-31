@@ -94,7 +94,49 @@ async function installMicrophoneStub(page: Page, denied = false) {
   }, { shouldDeny: denied });
 }
 
-async function reachRecall(page: Page, options: { savePhrase?: boolean } = {}) {
+async function installPronunciationRequestSpy(page: Page) {
+  await page.addInitScript(() => {
+    const originalFetch = window.fetch.bind(window);
+    (window as typeof window & { __cantuPronunciationRequest?: unknown }).__cantuPronunciationRequest = null;
+    window.fetch = async (input, init) => {
+      if (String(input).endsWith("/api/pronunciation") && init?.body instanceof FormData) {
+        const recording = init.body.get("recording");
+        (window as typeof window & { __cantuPronunciationRequest?: unknown }).__cantuPronunciationRequest = recording instanceof File
+          ? {
+              name: recording.name,
+              type: recording.type,
+              size: recording.size,
+              durationMs: init.body.get("durationMs"),
+              fields: [...init.body.keys()],
+              hasTargetText: init.body.has("targetText"),
+              hasSourceText: init.body.has("sourceText"),
+              hasUserId: init.body.has("userId"),
+            }
+          : null;
+      }
+      return originalFetch(input, init);
+    };
+  });
+}
+
+async function completeShadowingPractice(page: Page) {
+  await page.getByRole("button", { name: "Felveszem" }).click();
+  const stopButton = page.getByRole("button", { name: "Leállítom" });
+  await expect(stopButton).toBeVisible();
+  await stopButton.click();
+  await expect(page.getByLabel("Saját gyakorlófelvételem visszahallgatása")).toBeVisible();
+  await page.getByRole("button", { name: "Nézzük meg" }).click();
+  await expect(page.getByRole("heading", { name: "Ezt értettem:" })).toBeVisible();
+  await expect(page.getByText("Minden szót elcsíptem.")).toBeVisible();
+  await expect(page.getByText(/nem akcentus- vagy fonémapontszám/i)).toBeVisible();
+  await page.getByRole("button", { name: "Tovább" }).click();
+}
+
+async function reachRecall(page: Page, options: {
+  savePhrase?: boolean;
+  practiceShadowing?: boolean;
+  expectLocalReference?: boolean;
+} = {}) {
   await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "20");
   await page.getByRole("button", { name: "Tovább" }).click();
@@ -111,9 +153,13 @@ async function reachRecall(page: Page, options: { savePhrase?: boolean } = {}) {
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "60");
   await page.getByRole("button", { name: "Jöhet a próba" }).click();
   await expect(page.getByRole("heading", { name: "Mondd ki te is" })).toBeVisible();
-  await expect(page.getByText(/nem hallgat bele és nem értékeli/i)).toBeVisible();
+  await expect(page.getByText(/érthetőség és magabiztos használat/i)).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
-  await page.getByRole("button", { name: "Kimondtam" }).click();
+  if (options.expectLocalReference) {
+    await expect(page.getByLabel("A helyi forrásrészlet lejátszása")).toBeVisible();
+  }
+  if (options.practiceShadowing) await completeShadowingPractice(page);
+  else await page.getByRole("button", { name: "Most kihagyom" }).click();
   await expect(page.getByRole("heading", { name: "Emlékszel?" })).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "90");
 }
@@ -176,6 +222,8 @@ test("unauthenticated audio exploration stays local and reaches auth boundary", 
 test("authenticated audio sends only selected clip and requires confirmation", async ({ page }) => {
   const runtime = watchRuntime(page);
   const fullFile = createGeneratedToneWav();
+  await installMicrophoneStub(page);
+  await installPronunciationRequestSpy(page);
   await page.addInitScript(() => {
     const originalFetch = window.fetch.bind(window);
     (window as typeof window & { __cantuTranscriptionRequest?: unknown }).__cantuTranscriptionRequest = null;
@@ -231,7 +279,30 @@ test("authenticated audio sends only selected clip and requires confirmation", a
   await expect(page.getByRole("heading", { name: /Készen áll a megértésre/i })).toBeVisible();
   await page.getByRole("button", { name: "Értsük meg" }).click();
   await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
-  await reachRecall(page);
+  await reachRecall(page, { practiceShadowing: true, expectLocalReference: true });
+  const practiceRequest = await page.evaluate(() => (window as typeof window & {
+    __cantuPronunciationRequest?: {
+      name: string;
+      type: string;
+      size: number;
+      durationMs: string;
+      fields: string[];
+      hasTargetText: boolean;
+      hasSourceText: boolean;
+      hasUserId: boolean;
+    };
+  }).__cantuPronunciationRequest);
+  expect(practiceRequest).toEqual({
+    name: "learner-practice.webm",
+    type: "audio/webm",
+    size: 5,
+    durationMs: expect.any(String),
+    fields: ["recording", "durationMs", "sessionId", "chunkIndex"],
+    hasTargetText: false,
+    hasSourceText: false,
+    hasUserId: false,
+  });
+  expect(practiceRequest!.name).not.toBe("full-source-never-upload.wav");
   await completeRecall(page, "Ci vediamo domani");
   await expectNoHorizontalOverflow(page);
   expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
@@ -271,6 +342,7 @@ test("transcript can be explicitly edited before verification", async ({ page })
 });
 
 test("microphone starts only after explicit action and reaches transcript candidate", async ({ page }) => {
+  const runtime = watchRuntime(page);
   await installMicrophoneStub(page);
   await signInWithDeterministicAuth(page);
   await page.getByRole("tab", { name: "Hallgasd" }).click();
@@ -281,6 +353,7 @@ test("microphone starts only after explicit action and reaches transcript candid
   await expect(page.getByText("A rövid felvétel elkészült.")).toBeVisible();
   await page.getByRole("button", { name: "Felvétel átírása" }).click();
   await expect(page.getByRole("heading", { name: "Ezt hallottam" })).toBeVisible();
+  expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
 });
 
 test("microphone permission denial offers audio and text recovery", async ({ page }) => {
@@ -319,13 +392,24 @@ test("authentication history, derived text result, deletion and sign-out remain 
 });
 
 test("authenticated text analysis completes the full progressive learning loop", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  await installMicrophoneStub(page);
+  await installPronunciationRequestSpy(page);
   await signInWithDeterministicAuth(page);
   await page.getByRole("tab", { name: "Szöveg" }).click();
   await page.getByLabel("Olasz szöveg").fill("Non vedo l'ora di partire domani.");
   await page.getByRole("button", { name: "Ezt értsük meg" }).click();
   await page.getByRole("button", { name: "Rendben, tovább" }).click();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await reachRecall(page, { savePhrase: true });
+  await reachRecall(page, { savePhrase: true, practiceShadowing: true });
+  const practiceRequest = await page.evaluate(() => (window as typeof window & {
+    __cantuPronunciationRequest?: { fields: string[]; hasTargetText: boolean; hasSourceText: boolean };
+  }).__cantuPronunciationRequest);
+  expect(practiceRequest).toMatchObject({
+    fields: ["recording", "durationMs", "sessionId", "chunkIndex"],
+    hasTargetText: false,
+    hasSourceText: false,
+  });
   await completeRecall(page, "Non vedo l'ora");
   await expect(page.getByText("Mentett kifejezés").locator("..").getByText("1", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Igen" }).click();
@@ -333,9 +417,13 @@ test("authenticated text analysis completes the full progressive learning loop",
   const history = page.getByRole("region", { name: "Saját tanulásaim" });
   await expect(history.getByText("100%")).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
 });
 
 test("saved ready session resumes from persisted stage without original source", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  await installMicrophoneStub(page);
+  await installPronunciationRequestSpy(page);
   await signInWithDeterministicAuth(page);
   await page.getByRole("tab", { name: "Szöveg" }).click();
   await page.getByLabel("Olasz szöveg").fill("Possiamo parlarne domani mattina?");
@@ -355,7 +443,28 @@ test("saved ready session resumes from persisted stage without original source",
   ]);
   await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
   await expect(page.getByText("Possiamo parlarne domani mattina?")).toHaveCount(0);
+  await page.getByRole("button", { name: "Ezt értem" }).click();
+  await page.getByRole("button", { name: "Jöhet a próba" }).click();
+  await expect(page.getByRole("heading", { name: "Mondd ki te is" })).toBeVisible();
+  await expect(page.getByLabel("A helyi forrásrészlet lejátszása")).toHaveCount(0);
+  await completeShadowingPractice(page);
+  await expect(page.getByRole("heading", { name: "Emlékszel?" })).toBeVisible();
   await expectNoHorizontalOverflow(page);
+  expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
+});
+
+test("unauthenticated pronunciation provider request is rejected without exposing a paid proxy", async ({ page }) => {
+  await page.goto("/app?mode=text");
+  const response = await page.evaluate(async () => {
+    const formData = new FormData();
+    formData.set("recording", new File([new Uint8Array([0x1a, 0x45, 0xdf, 0xa3, 1])], "learner-practice.webm", { type: "audio/webm" }));
+    formData.set("durationMs", "1000");
+    formData.set("sessionId", "11111111-1111-4111-8111-111111111111");
+    formData.set("chunkIndex", "0");
+    const result = await fetch("/api/pronunciation", { method: "POST", body: formData });
+    return { status: result.status, body: await result.json() };
+  });
+  expect(response).toEqual({ status: 401, body: { error: { code: "unauthenticated" } } });
 });
 
 test("instruction-like source remains data and cannot enable retrieval or change control flow", async ({ page }) => {

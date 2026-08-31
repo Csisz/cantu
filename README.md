@@ -24,6 +24,7 @@ Fő útvonalak:
 - `/app` — Input Studio, autentikáció és a „Saját tanulásaim”;
 - `/api/transcribe` — hitelesített, kizárólag átmeneti rövidklip-feldolgozás;
 - `/api/analyze` — hitelesített, ellenőrzött szöveg → validált tanulási objektum;
+- `/api/pronunciation` — hitelesített, átmeneti gyakorlófelvétel → átlátható szófelismerési összehasonlítás;
 - `/auth/confirm` — Supabase e-mail-megerősítés.
 
 Supabase-konfiguráció nélkül a landing és a helyi Input Studio használható, de a valós STT, a strukturált nyelvi elemzés és a mentés hitelesített fiókot igényel.
@@ -62,7 +63,7 @@ Az első adapter az OpenAI Responses API-t és alapértelmezetten a `gpt-5.6-ter
 - Cantu-oldalon Zod-séma és külön szemantikai ellenőrzés után válik eredménnyé;
 - hibás forrásidézet esetén legfeljebb egy célzott javító próbát enged.
 
-A verziózott `learning-analysis-v1` objektum természetes magyar jelentést, valóban a forrásban szereplő hasznos olasz chunkokat, legfeljebb két nyelvtani megfigyelést, szövegalapú kiejtési fókuszt, új tanítási példákat és determinisztikus recall-elemeket tartalmaz. A jelenlegi képernyő ezek nyugodt, mobilbarát előnézete; a teljes progresszív kártyajáték és pontozás Milestone 6.
+A verziózott `learning-analysis-v1` objektum természetes magyar jelentést, valóban a forrásban szereplő hasznos olasz chunkokat, legfeljebb két nyelvtani megfigyelést, szövegalapú kiejtési fókuszt, új tanítási példákat és determinisztikus recall-elemeket tartalmaz. Ezt a Milestone 6 progresszív tanulási lejátszója változtatja teljes tanulási körré.
 
 A stabil providerutasítás külön marad a dinamikus forrástól. A forrás `untrusted_user_source` adatobjektumként kerül a kérés user-input részébe: a benne szereplő „SYSTEM”, „ignore”, webes keresési vagy titokkérő szöveg nyelvi adat, nem utasítás. A modellnek nincs retrieval- vagy forrásazonosító eszköze, és tilos környező/hiányzó művet rekonstruálnia.
 
@@ -90,11 +91,34 @@ Mit jelent?
 
 A Milestone 6 nem indít második nyelvi generálást. A már validált privát eredményt használja, így a lecke renderelésének és pontozásának AI-költsége nulla.
 
+## Milestone 7 — kiejtésgyakorlás és shadowing
+
+A **Mondd ki te is** lépésben a tanuló egy rövid, validált chunkot gyakorol. Aktív audio- vagy mikrofonos munkamenetben a helyi forrásrészlet referencia maradhat; folytatott leckében text + a meglévő kiejtési útmutató is elegendő. Nincs TTS és nincs tartós referenciahang-tár.
+
+```text
+célkifejezés
+→ kifejezett helyi gyakorlófelvétel (legfeljebb 12 mp)
+→ saját felvétel helyi visszahallgatása
+→ külön „Nézzük meg” művelet
+→ átmeneti STT
+→ determinisztikus, szavanként magyarázható összehasonlítás
+```
+
+- A `PronunciationFeedbackProvider` első implementációja a meglévő `SpeechToTextProvider` eredményét hasonlítja össze a célkifejezéssel. Nem kér új nyelvi elemzést.
+- A böngésző csak `sessionId`, chunk index, időtartam és a rövid tanulói felvétel mezőket küldi. A szerver az owned, privát `learning_result` rekordból tölti vissza a kanonikus célt; kliens által megadott tetszőleges célszöveget vagy `user_id`-t nem fogad el.
+- A visszajelzés azt mutatja, mit értett az STT, mely célszavak hiányoztak, volt-e plusz szó vagy sorrendkülönbség. Ez nem tudományos kiejtéspontszám és nem fonéma-diagnózis.
+- A mikrofon csak gombnyomásra indul, a tanuló leállíthatja vagy elvetheti a felvételt, és a saját felvételét a providerhívás előtt helyben visszahallgathatja.
+- A felvétel átmeneti: nincs Supabase Storage, fájlrendszeres mentés, nyilvános URL vagy hangelőzmény. Nincs voiceprint, személyazonosítás, életkor-/nem-/nemzetiség-/akcentus-, érzelem- vagy személyiségkövetkeztetés.
+- A fizetős visszajelzés hitelesítést, külön explicit műveletet, 12 másodperces/1 MB-os korlátot és privát-alfa 15 próbálkozás/óra guardot használ. A gyakorlás kihagyható, ezért provider- vagy mikrofonhiba nem zárja le a leckét.
+
+Az OpenAI completed-file STT adaptere változatlanul a `gpt-transcribe` modellt használja. A kiejtési réteg providerfüggetlen, így később gazdagabb, bizonyítékalapú megfigyelések adhatók hozzá a React komponensek providerhez kötése nélkül. Külső szolgáltatói adatmegőrzésről a Cantu nem tesz általános ígéretet; nyilvános indulás előtt szerződéses és adatkezelési felülvizsgálat szükséges.
+
 ## Adatvédelem és perzisztencia
 
 - nincs Supabase Storage, audio bucket, fájlrendszeres mentés vagy nyilvános audio URL;
 - a szerver a rövid klipet memóriában adja tovább az STT-szolgáltatónak, majd a kérés életciklusával elengedi;
 - nyers audio, waveform, teljes fájl és provider raw payload nem kerül adatbázisba vagy logba;
+- a tanulói shadowing-felvétel is kizárólag a pillanatnyi böngésző/server/STT kérés-életciklusban létezik, és nem kerül tartós tárba;
 - `learning_sessions` csak inputtípust, kiválasztott időtartamot, státuszt és időbélyegeket kap;
 - `processing_attempts` csak stage/provider/status/latency/normalizált hibakód adatot kap;
 - a transcript jelölt és az ellenőrzött/javított forrásszöveg helyi, átmeneti állapot marad; `verified_source_text` továbbra is `null`;
@@ -111,7 +135,7 @@ Az OpenAI oldali adatkezelésre nem teszünk általános megőrzésmentességi �
 - `user_phrasebook` — privát, kifejezetten mentett kifejezések; session törlésekor a hivatkozás `SET NULL`;
 - `learning_progress` — tulajdonos- és session-konzisztens haladás.
 
-Az M4 migráció tulajdonoshoz kötött, validált RPC-kkel kezeli az STT-életciklust, és privát-alfa 20 kísérlet/óra korlátot alkalmaz. Az M5 additív migráció külön, 10 elemzés/óra guardot, futó-kérés deduplikációt és session/fingerprint/schema/prompt/model kötésű privát cache-t ad. A böngésző nem írhat `processing_attempts` vagy `learning_results` rekordot; az elemzési RPC-k kizárólag a szerveroldali Supabase secret szerepkörének elérhetők. Minden alkalmazástábla RLS-védett. A `songs`, `recognition_attempts`, `lyrics_versions`, `lessons`, `user_songs` és `user_song_progress` legacy struktúraként megmarad, de az aktív BYOC runtime nem használja.
+Az M4 migráció tulajdonoshoz kötött, validált RPC-kkel kezeli az STT-életciklust, és privát-alfa 20 kísérlet/óra korlátot alkalmaz. Az M5 additív migráció külön, 10 elemzés/óra guardot, futó-kérés deduplikációt és session/fingerprint/schema/prompt/model kötésű privát cache-t ad. Az M7 migráció ugyanebben a metaadat-táblában külön `pronunciation` stage-et és 15 próbálkozás/óra guardot ad; csak provider-, állapot-, latencia- és normalizált hibakód kerül bele, hang vagy összehasonlított szöveg nem. A böngésző nem írhat `processing_attempts` vagy `learning_results` rekordot; az elemzési RPC-k kizárólag a szerveroldali Supabase secret szerepkörének elérhetők. Minden alkalmazástábla RLS-védett. A `songs`, `recognition_attempts`, `lyrics_versions`, `lessons`, `user_songs` és `user_song_progress` legacy struktúraként megmarad, de az aktív BYOC runtime nem használja.
 
 ## Környezeti változók
 
@@ -151,7 +175,7 @@ npm run test:e2e
 npm run build
 ```
 
-A unit/component/E2E tesztek determinisztikus `SpeechToTextProvider` és `LanguageAnalysisProvider` implementációt, valamint generált hangot használnak, ezért nem költenek OpenAI-kreditet. A Playwright mockok csak nem-production környezetben, `CANTU_E2E_STT_MOCK=1` és `CANTU_E2E_ANALYSIS_MOCK=1` mellett aktiválhatók. A tesztek külön ellenőrzik a strict sémát, forrásidézet-előfordulást, egyszeri szemantikai retryt, prompt-injekciós elválasztást, toolmentességet és az RLS/service-role írási határt.
+A unit/component/E2E tesztek determinisztikus `SpeechToTextProvider`, `LanguageAnalysisProvider` és `PronunciationFeedbackProvider` implementációt, valamint generált hangot használnak, ezért nem költenek OpenAI-kreditet. A Playwright mockok csak nem-production környezetben, `CANTU_E2E_STT_MOCK=1` és `CANTU_E2E_ANALYSIS_MOCK=1` mellett aktiválhatók. A tesztek külön ellenőrzik a strict sémát, forrásidézet-előfordulást, egyszeri szemantikai retryt, prompt-injekciós elválasztást, toolmentességet, az owned kiejtési célt és az RLS/service-role írási határt.
 
 Valós elemzési smoke teszthez állíts be saját, ignorált `.env.local` fájlban `OPENAI_API_KEY` értéket, valamint a helyi vagy felhős Supabase publikus és szerver-secret változóit. Egy hitelesített fiókkal elemezz egy saját, rövid olasz mondatot pontosan egyszer. Ne használj dalszöveget, könyv- vagy filmidézetet; kulcsot, nyers provider-választ vagy promptot ne írj logba és ne commitolj.
 
@@ -165,4 +189,4 @@ A script kizárólag biztonságos modell/latencia/token- és strukturális darab
 
 ## Kifejezetten halasztva
 
-Nincs kiejtésértékelés vagy beszédpontozás (Milestone 7), TTS, automatikus phrasebook-mentés, spaced repetition vagy review scheduling (Milestone 8), további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.
+Nincs TTS, fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, spaced repetition vagy review scheduling (Milestone 8), beszélgetős tutor, további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.

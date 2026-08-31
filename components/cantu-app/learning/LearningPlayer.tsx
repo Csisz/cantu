@@ -29,6 +29,7 @@ export type LearningPlayerProps = {
   initialProgress?: { stage: string; recallScore: number | null } | null;
   initialSavedChunkIndices?: number[];
   localPlaybackUrl?: string;
+  feedbackAuthenticated?: boolean;
   onStartOver?: () => void;
 };
 
@@ -38,6 +39,7 @@ export function LearningPlayer({
   initialProgress,
   initialSavedChunkIndices = [],
   localPlaybackUrl,
+  feedbackAuthenticated = true,
   onStartOver,
 }: LearningPlayerProps) {
   const stages = useMemo(() => lessonStageSequence(analysis), [analysis]);
@@ -126,7 +128,15 @@ export function LearningPlayer({
           />
         ) : null}
         {stage === "grammar" ? <GrammarCard analysis={analysis} onNext={advanceStage} /> : null}
-        {stage === "say" ? <SayCard analysis={analysis} localPlaybackUrl={localPlaybackUrl} onNext={advanceStage} /> : null}
+        {stage === "say" ? (
+          <SayCard
+            analysis={analysis}
+            sessionId={sessionId}
+            authenticated={feedbackAuthenticated}
+            localPlaybackUrl={localPlaybackUrl}
+            onNext={advanceStage}
+          />
+        ) : null}
         {stage === "recall" && currentRecall ? (
           <RecallCard
             item={currentRecall}

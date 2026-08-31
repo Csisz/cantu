@@ -1586,6 +1586,134 @@
   width: 100%;
 }
 
+.shadowingPractice,
+.shadowingStatus,
+.shadowingResult {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+
+.shadowingPrivacy,
+.shadowingCaution,
+.shadowingTiming {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+  line-height: 1.55;
+}
+
+.shadowingLive {
+  min-height: 48px;
+}
+
+.shadowingLive p {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 15px;
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--purple) 7%, transparent);
+}
+
+.shadowingLive strong {
+  color: var(--purple);
+}
+
+.shadowingLive strong span {
+  margin-right: 6px;
+  color: var(--danger);
+}
+
+.shadowingActions,
+.shadowingRecorded {
+  display: grid;
+  gap: 10px;
+}
+
+.shadowingRecorded > span {
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.shadowingRecorded audio,
+.shadowingStatus audio {
+  width: 100%;
+}
+
+.shadowingStatus {
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--cyan) 6%, transparent);
+}
+
+.shadowingStatus h3,
+.shadowingResult h3 {
+  font-size: 1.15rem;
+}
+
+.shadowingStatus h3:focus,
+.shadowingResult h3:focus {
+  outline: none;
+}
+
+.shadowingResult blockquote {
+  padding: 18px;
+  border: 0;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--cyan) 9%, transparent);
+  overflow-wrap: anywhere;
+  font: 800 clamp(1.25rem, 4vw, 1.8rem)/1.25 var(--font-display), sans-serif;
+}
+
+.shadowingObservations {
+  display: grid;
+  gap: 9px;
+}
+
+.shadowingObservations li {
+  padding: 12px 14px;
+  border-left: 3px solid var(--cyan);
+  border-radius: 0 13px 13px 0;
+  background: color-mix(in srgb, var(--cyan) 6%, transparent);
+  line-height: 1.5;
+}
+
+.lessonSecondaryButton,
+.lessonSkipButton {
+  min-height: 44px;
+  width: fit-content;
+  padding: 0 16px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.lessonSecondaryButton {
+  border: 1px solid color-mix(in srgb, var(--purple) 38%, var(--line));
+  color: var(--purple);
+  background: transparent;
+}
+
+.lessonSkipButton {
+  border: 0;
+  color: var(--ink-soft);
+  background: transparent;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.shadowingPractice .lessonPrimary,
+.shadowingStatus .lessonPrimary,
+.shadowingResult .lessonPrimary {
+  margin-top: 0;
+}
+
 .selfPracticeNote {
   font-size: 0.76rem;
 }
@@ -1859,8 +1987,16 @@
   }
 
   .lessonPrimary,
-  .lessonPrimaryLink {
+  .lessonPrimaryLink,
+  .lessonSecondaryButton,
+  .lessonSkipButton {
     width: 100%;
+  }
+
+  .shadowingLive p {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .completionSummary {
