@@ -2,6 +2,8 @@ import "server-only";
 
 import { randomUUID } from "node:crypto";
 import type { LearningHistoryItem, LearningSessionMetadata } from "@/lib/domain/learning-session";
+import type { LearningProgressMutation } from "@/lib/domain/learning-progress";
+import { normalizePhraseIdentity } from "@/lib/learning/player";
 
 type E2ERow = LearningHistoryItem & { userId: string; sourceFingerprint?: string };
 
@@ -13,12 +15,24 @@ type E2EAnalysisResult = {
   resultJson: unknown;
 };
 
+type E2EPhrase = {
+  id: string;
+  userId: string;
+  italian_chunk: string;
+  meaning_hu: string;
+  note_hu: string | null;
+  register: string | null;
+  source_session_id: string | null;
+};
+
 const storeKey = "__cantuE2ELearningSessions" as const;
 const globalStore = globalThis as typeof globalThis & { [storeKey]?: E2ERow[] };
 const resultStoreKey = "__cantuE2ELearningResults" as const;
 const globalResultStore = globalThis as typeof globalThis & {
   [resultStoreKey]?: E2EAnalysisResult[];
 };
+const phraseStoreKey = "__cantuE2EPhrasebook" as const;
+const globalPhraseStore = globalThis as typeof globalThis & { [phraseStoreKey]?: E2EPhrase[] };
 
 function rows() {
   globalStore[storeKey] ??= [];
@@ -28,6 +42,11 @@ function rows() {
 function results() {
   globalResultStore[resultStoreKey] ??= [];
   return globalResultStore[resultStoreKey];
+}
+
+function phrases() {
+  globalPhraseStore[phraseStoreKey] ??= [];
+  return globalPhraseStore[phraseStoreKey];
 }
 
 export function listE2ELearningSessions(userId: string) {
@@ -61,6 +80,10 @@ export function deleteE2ELearningSession(userId: string, sessionId: string) {
   const index = rows().findIndex((row) => row.userId === userId && row.id === sessionId);
   if (index < 0) return false;
   rows().splice(index, 1);
+  globalResultStore[resultStoreKey] = results().filter((row) => row.sessionId !== sessionId);
+  for (const phrase of phrases()) {
+    if (phrase.userId === userId && phrase.source_session_id === sessionId) phrase.source_session_id = null;
+  }
   return true;
 }
 
@@ -71,6 +94,7 @@ export function hasE2ELearningSession(userId: string, sessionId: string) {
 export function clearE2ELearningSessions(userId: string) {
   globalStore[storeKey] = rows().filter((row) => row.userId !== userId);
   globalResultStore[resultStoreKey] = results().filter((row) => row.userId !== userId);
+  globalPhraseStore[phraseStoreKey] = phrases().filter((row) => row.userId !== userId);
 }
 
 export function startE2ETranscriptionSession(
@@ -172,4 +196,48 @@ export function completeE2EAnalysis(
     results().push({ userId, ...input });
   }
   return true;
+}
+
+export function getE2ELearningExperience(userId: string, sessionId: string) {
+  const row = rows().find((item) => item.userId === userId && item.id === sessionId && item.sourceStatus === "ready");
+  const result = results().find((item) => item.userId === userId && item.sessionId === sessionId);
+  if (!row || !result) return null;
+  return {
+    resultJson: result.resultJson,
+    progress: row.progress.stage === "new"
+      ? null
+      : {
+          stage: row.progress.stage,
+          percentComplete: row.progress.percentComplete,
+          recallScore: row.progress.recallScore ?? null,
+        },
+    phrases: phrases().filter((phrase) => phrase.userId === userId && phrase.source_session_id === sessionId),
+  };
+}
+
+export function saveE2EProgress(userId: string, input: LearningProgressMutation) {
+  const row = rows().find((item) => item.userId === userId && item.id === input.sessionId && item.sourceStatus === "ready");
+  if (!row) return false;
+  row.progress = {
+    stage: input.stage,
+    percentComplete: input.percentComplete,
+    recallScore: input.recallScore ?? null,
+    lastOpenedAt: new Date().toISOString(),
+  };
+  return true;
+}
+
+export function saveE2EPhrase(
+  userId: string,
+  input: Omit<E2EPhrase, "id" | "userId">,
+) {
+  const ownedSession = rows().some((row) => row.userId === userId && row.id === input.source_session_id);
+  if (!ownedSession) return { duplicate: false, saved: false };
+  const duplicate = phrases().some((phrase) =>
+    phrase.userId === userId
+    && phrase.source_session_id === input.source_session_id
+    && normalizePhraseIdentity(phrase.italian_chunk) === normalizePhraseIdentity(input.italian_chunk),
+  );
+  if (!duplicate) phrases().push({ id: randomUUID(), userId, ...input });
+  return { duplicate, saved: true };
 }

@@ -12,6 +12,7 @@ export type VerifiedAudioLearningSource = {
   sourceStatus: "user_verified" | "user_edited";
   sessionId: string;
   durationMs: number;
+  localPlaybackUrl?: string;
 };
 
 export type LearningSource =

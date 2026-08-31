@@ -116,6 +116,7 @@ export type LearningProgressRow = {
   stage: string;
   percent_complete: number;
   last_opened_at: string;
+  recall_score?: number | null;
 };
 
 export type LearningHistoryItem = {
@@ -129,6 +130,7 @@ export type LearningHistoryItem = {
     stage: string;
     percentComplete: number;
     lastOpenedAt: string | null;
+    recallScore?: number | null;
   };
 };
 
@@ -150,6 +152,7 @@ export function toLearningHistoryItems(
         stage: progress?.stage ?? "new",
         percentComplete: Math.min(100, Math.max(0, progress?.percent_complete ?? 0)),
         lastOpenedAt: progress?.last_opened_at ?? null,
+        recallScore: progress?.recall_score ?? null,
       },
     };
   });

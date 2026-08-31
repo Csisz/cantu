@@ -243,12 +243,15 @@ describe("InputStudio", () => {
     expect(fetchSpy).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Értsük meg" }));
     expect(await screen.findByRole("heading", { name: "Mit jelent?" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Ezt érdemes megjegyezni" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Tovább" }));
     expect(screen.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Miért így mondják?" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Használd máshol is" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "Emlékszel?" })).toBeInTheDocument();
-    expect(fetchSpy).toHaveBeenCalledTimes(1);
-    const call = fetchSpy.mock.calls[0]!;
+    fireEvent.click(screen.getByRole("button", { name: "Ezt értem" }));
+    expect(screen.getByRole("heading", { name: "Miért pont így mondják?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Próbáld más helyzetben" })).toBeInTheDocument();
+    const analysisCalls = fetchSpy.mock.calls.filter(([url]) => url === "/api/analyze");
+    expect(analysisCalls).toHaveLength(1);
+    const call = analysisCalls[0]!;
     expect(call[0]).toBe("/api/analyze");
     expect(JSON.parse(String(call[1]?.body))).toEqual({
       text,

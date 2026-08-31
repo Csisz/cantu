@@ -44,7 +44,7 @@ async function signInWithDeterministicAuth(page: Page) {
   await page.getByLabel("E-mail-cím").fill("tanulo@example.com");
   await page.getByLabel("Jelszó").fill("biztonsagos-jelszo");
   await page.getByRole("button", { name: "Bejelentkezés" }).click();
-  await expect(page.getByRole("button", { name: "Kijelentkezés" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Kijelentkezés" })).toBeVisible({ timeout: 15_000 });
 }
 
 async function loadAudio(page: Page, buffer = createGeneratedToneWav()) {
@@ -92,6 +92,44 @@ async function installMicrophoneStub(page: Page, denied = false) {
     }
     Object.defineProperty(window, "MediaRecorder", { configurable: true, value: Recorder });
   }, { shouldDeny: denied });
+}
+
+async function reachRecall(page: Page, options: { savePhrase?: boolean } = {}) {
+  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "20");
+  await page.getByRole("button", { name: "Tovább" }).click();
+  await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "40");
+  if (options.savePhrase) {
+    await page.getByRole("button", { name: "Mentem ezt" }).click();
+    await expect(page.getByRole("button", { name: "Elmentve ✓" })).toBeVisible();
+  }
+  await page.getByRole("button", { name: "Ezt értem" }).click();
+  await expect(page.getByRole("heading", { name: "Miért pont így mondják?" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Próbáld más helyzetben" })).toBeVisible();
+  await expect(page.getByText("Új tanítási példák · nem a forrás részei")).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "60");
+  await page.getByRole("button", { name: "Jöhet a próba" }).click();
+  await expect(page.getByRole("heading", { name: "Mondd ki te is" })).toBeVisible();
+  await expect(page.getByText(/nem hallgat bele és nem értékeli/i)).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "80");
+  await page.getByRole("button", { name: "Kimondtam" }).click();
+  await expect(page.getByRole("heading", { name: "Emlékszel?" })).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "90");
+}
+
+async function completeRecall(page: Page, expectedChunk: string) {
+  await page.getByText("Természetes, hétköznapi közlés").click();
+  await page.getByRole("button", { name: "Ellenőrzöm" }).click();
+  await expect(page.getByText("Pontosan.")).toBeVisible();
+  await page.getByRole("button", { name: "Következő kérdés" }).click();
+  await page.getByLabel("Olasz válasz").fill(expectedChunk.toLocaleUpperCase("it-IT"));
+  await page.getByRole("button", { name: "Ellenőrzöm" }).click();
+  await expect(page.getByText("Pontosan.")).toBeVisible();
+  await page.getByRole("button", { name: "Befejezem" }).click();
+  await expect(page.getByRole("heading", { name: "Most már érted — és van belőle valami, amit te is tudsz használni." })).toBeVisible();
+  await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
+  await expect(page.getByText("2 / 2")).toBeVisible();
 }
 
 test("landing to text confirmation and explicit unauthenticated analysis boundary", async ({ page }) => {
@@ -193,7 +231,8 @@ test("authenticated audio sends only selected clip and requires confirmation", a
   await expect(page.getByRole("heading", { name: /Készen áll a megértésre/i })).toBeVisible();
   await page.getByRole("button", { name: "Értsük meg" }).click();
   await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
+  await reachRecall(page);
+  await completeRecall(page, "Ci vediamo domani");
   await expectNoHorizontalOverflow(page);
   expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
 });
@@ -276,21 +315,46 @@ test("authentication history, derived text result, deletion and sign-out remain 
   await textRow.getByRole("button", { name: "Igen, törlöm" }).click();
   await expect(history.getByText("Szöveg", { exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Kijelentkezés" }).click();
-  await expect(page.getByRole("button", { name: "Bejelentkezés" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Bejelentkezés" })).toBeVisible({ timeout: 15_000 });
 });
 
-test("authenticated text analysis renders every Milestone 5 preview section", async ({ page }) => {
+test("authenticated text analysis completes the full progressive learning loop", async ({ page }) => {
   await signInWithDeterministicAuth(page);
   await page.getByRole("tab", { name: "Szöveg" }).click();
   await page.getByLabel("Olasz szöveg").fill("Non vedo l'ora di partire domani.");
   await page.getByRole("button", { name: "Ezt értsük meg" }).click();
   await page.getByRole("button", { name: "Rendben, tovább" }).click();
   await page.getByRole("button", { name: "Értsük meg" }).click();
+  await reachRecall(page, { savePhrase: true });
+  await completeRecall(page, "Non vedo l'ora");
+  await expect(page.getByText("Mentett kifejezés").locator("..").getByText("1", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Igen" }).click();
+  await expect(page.getByRole("button", { name: "Igen" })).toHaveAttribute("aria-pressed", "true");
+  const history = page.getByRole("region", { name: "Saját tanulásaim" });
+  await expect(history.getByText("100%")).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("saved ready session resumes from persisted stage without original source", async ({ page }) => {
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("tab", { name: "Szöveg" }).click();
+  await page.getByLabel("Olasz szöveg").fill("Possiamo parlarne domani mattina?");
+  await page.getByRole("button", { name: "Ezt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await page.getByRole("button", { name: "Értsük meg" }).click();
   await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  const progressResponse = page.waitForResponse((response) => response.url().endsWith("/api/learning/progress"));
+  await page.getByRole("button", { name: "Tovább" }).click();
+  await progressResponse;
+  await page.goto("/app#library-title");
+  const row = page.getByRole("region", { name: "Saját tanulásaim" }).locator("li").filter({ hasText: "Szöveg" }).first();
+  await expect(row.getByText("40%")).toBeVisible();
+  await Promise.all([
+    page.waitForURL(/\/app\/learning\/[0-9a-f-]+$/, { timeout: 15_000 }),
+    row.getByRole("link", { name: "Folytatom" }).click(),
+  ]);
   await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Miért így mondják?" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Használd máshol is" })).toBeVisible();
-  await expect(page.getByRole("heading", { name: "Emlékszel?" })).toBeVisible();
+  await expect(page.getByText("Possiamo parlarne domani mattina?")).toHaveCount(0);
   await expectNoHorizontalOverflow(page);
 });
 

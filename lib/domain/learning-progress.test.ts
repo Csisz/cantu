@@ -6,7 +6,7 @@ describe("generalized learning progress", () => {
     expect(learningProgressMutationSchema.parse({
       sessionId: "30000000-0000-4000-8000-000000000003",
       stage: "recall",
-      percentComplete: 75,
+      percentComplete: 90,
       recallScore: 80,
     })).toBeTruthy();
     expect(() => learningProgressMutationSchema.parse({

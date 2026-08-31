@@ -32,7 +32,7 @@ describe("AccountSection generalized history", () => {
           items: [{
             id: "30000000-0000-4000-8000-000000000003",
             inputType: "text",
-            sourceStatus: "user_verified",
+            sourceStatus: "ready",
             sourceDurationMs: null,
             sourceCharCount: 27,
             createdAt: "2026-08-27T12:00:00Z",
@@ -43,6 +43,10 @@ describe("AccountSection generalized history", () => {
     );
     expect(screen.getByText("Szöveg")).toBeInTheDocument();
     expect(screen.getByText(/27 karakter/)).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "Folytatom" })).toHaveAttribute(
+      "href",
+      "/app/learning/30000000-0000-4000-8000-000000000003",
+    );
     expect(container.textContent).not.toContain("Questo contenuto è privato");
     fireEvent.click(screen.getByRole("button", { name: "Törlés" }));
     expect(screen.getByText("Biztosan törlöd?")).toBeInTheDocument();

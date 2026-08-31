@@ -46,7 +46,7 @@ export async function getLearningHistory(auth: AuthContext): Promise<LearningHis
       .order("created_at", { ascending: false }),
     supabase
       .from("learning_progress")
-      .select("session_id, stage, percent_complete, last_opened_at")
+      .select("session_id, stage, percent_complete, recall_score, last_opened_at")
       .eq("user_id", auth.user.id),
   ]);
 

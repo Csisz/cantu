@@ -5,6 +5,7 @@ import { requestLearningAnalysis } from "@/lib/analysis/client";
 import type { LearningAnalysis } from "@/lib/analysis/schema";
 import type { LearningSource } from "@/lib/input/types";
 import { AnalysisError, type AnalysisErrorCode } from "@/lib/providers/analysis/types";
+import { LearningPlayer } from "./learning/LearningPlayer";
 import styles from "./app.module.css";
 
 type AnalysisView =
@@ -34,122 +35,19 @@ function inputTypeFor(source: LearningSource) {
   return source.kind === "text" ? "text" : source.kind === "audio" ? "audio_file" : "microphone";
 }
 
-function ResultPreview({ analysis }: { analysis: LearningAnalysis }) {
-  if (analysis.analysisStatus === "not_italian") {
-    return (
-      <section className={styles.analysisMessage} aria-labelledby="not-italian-title">
-        <span className={styles.stepBadge}>Nyelvi ellenőrzés</span>
-        <h2 id="not-italian-title">Ez valószínűleg nem olasz.</h2>
-        <p>A Cantu első verziója olaszhoz készült.</p>
-        {analysis.languageAssessment.noteHu ? <p>{analysis.languageAssessment.noteHu}</p> : null}
-      </section>
-    );
-  }
-
-  if (analysis.analysisStatus === "insufficient_source") {
-    return (
-      <section className={styles.analysisMessage} aria-labelledby="short-source-title">
-        <span className={styles.stepBadge}>Rövid forrás</span>
-        <h2 id="short-source-title">Egy kicsit hosszabb mondatból többet tanulhatunk.</h2>
-        <p>{analysis.languageAssessment.noteHu ?? "Próbálj meg egy teljes rövid olasz mondatot hozni."}</p>
-      </section>
-    );
-  }
-
+function DegradedResult({ analysis, onStartOver }: { analysis: LearningAnalysis; onStartOver: () => void }) {
+  const notItalian = analysis.analysisStatus === "not_italian";
   return (
-    <div className={styles.analysisResult}>
-      <section className={styles.meaningCard} aria-labelledby="meaning-title">
-        <span className={styles.sectionNumber}>01</span>
-        <div>
-          <h2 id="meaning-title">Mit jelent?</h2>
-          <p className={styles.naturalMeaning}>{analysis.meaning?.naturalHu}</p>
-          {analysis.meaning?.literalStructureHu ? (
-            <div className={styles.literalMeaning}>
-              <strong>Szó szerinti felépítés</strong>
-              <p>{analysis.meaning.literalStructureHu}</p>
-            </div>
-          ) : null}
-          {analysis.meaning?.toneHu ? <p className={styles.toneNote}>{analysis.meaning.toneHu}</p> : null}
-        </div>
-      </section>
-
-      <section className={styles.analysisSection} aria-labelledby="chunks-title">
-        <span className={styles.sectionNumber}>02</span>
-        <div>
-          <h2 id="chunks-title">Ezt érdemes megjegyezni</h2>
-          <ul className={styles.chunkList}>
-            {analysis.chunks.map((chunk) => (
-              <li key={`${chunk.sourceText}-${chunk.meaningHu}`}>
-                <div>
-                  <strong lang="it">{chunk.sourceText}</strong>
-                  {chunk.register ? <span>{chunk.register}</span> : null}
-                </div>
-                <p>{chunk.meaningHu}</p>
-                {chunk.contextNoteHu ? <small>{chunk.contextNoteHu}</small> : null}
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      {analysis.grammar.length > 0 ? (
-        <section className={styles.analysisSection} aria-labelledby="grammar-title">
-          <span className={styles.sectionNumber}>03</span>
-          <div>
-            <h2 id="grammar-title">Miért így mondják?</h2>
-            <div className={styles.insightList}>
-              {analysis.grammar.map((note) => (
-                <article key={note.titleHu}>
-                  <h3>{note.titleHu}</h3>
-                  <p>{note.explanationHu}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-      ) : null}
-
-      {analysis.pronunciation ? (
-        <section className={styles.compactInsight} aria-labelledby="pronunciation-title">
-          <h2 id="pronunciation-title">Hallás- és kiejtési fókusz</h2>
-          <p>{analysis.pronunciation.noteHu}</p>
-          <ul>{analysis.pronunciation.focus.map((focus) => <li key={focus} lang="it">{focus}</li>)}</ul>
-        </section>
-      ) : null}
-
-      <section className={styles.analysisSection} aria-labelledby="transfer-title">
-        <span className={styles.sectionNumber}>04</span>
-        <div>
-          <h2 id="transfer-title">Használd máshol is</h2>
-          <p className={styles.generatedLabel}>Új, Cantu által készített példák</p>
-          <ul className={styles.transferList}>
-            {analysis.transfer.map((example) => (
-              <li key={example.italian}>
-                <strong lang="it">{example.italian}</strong>
-                <span>{example.meaningHu}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section className={styles.analysisSection} aria-labelledby="recall-title">
-        <span className={styles.sectionNumber}>05</span>
-        <div>
-          <h2 id="recall-title">Emlékszel?</h2>
-          <p className={styles.generatedLabel}>A következő mérföldkőben ezekből interaktív gyakorlás lesz.</p>
-          <ol className={styles.recallList}>
-            {analysis.recall.map((item) => <li key={item.id}>{item.promptHu}</li>)}
-          </ol>
-        </div>
-      </section>
-
-      {analysis.warnings.length > 0 ? (
-        <aside className={styles.analysisWarnings} aria-label="Elemzési megjegyzések">
-          {analysis.warnings.map((warning) => <p key={warning.code}>{warning.messageHu}</p>)}
-        </aside>
-      ) : null}
-    </div>
+    <section className={styles.analysisMessage} aria-labelledby="degraded-analysis-title">
+      <span className={styles.stepBadge}>{notItalian ? "Nyelvi ellenőrzés" : "Rövid forrás"}</span>
+      <h2 id="degraded-analysis-title">
+        {notItalian ? "Ez valószínűleg nem olasz." : "Egy kicsit hosszabb mondatból többet tanulhatunk."}
+      </h2>
+      <p>{analysis.languageAssessment.noteHu ?? (notItalian
+        ? "A Cantu első verziója olaszhoz készült."
+        : "Próbálj meg egy teljes rövid olasz mondatot hozni.")}</p>
+      <button className={styles.mainAction} type="button" onClick={onStartOver}>Másik forrást hozok</button>
+    </section>
   );
 }
 
@@ -209,7 +107,12 @@ export function LearningPreview({ source, onStartOver, authenticated }: {
         <span className={styles.panelEyebrow}>Értem a mondatot…</span>
         <h2 id="analysis-processing-title">Kiemelem, amit érdemes megtanulni…</h2>
         <p>Az ellenőrzött szöveg átmenetileg a nyelvi elemzőhöz kerül. A teljes hangfájlt nem küldjük újra.</p>
-        <button className={styles.secondaryAction} type="button" onClick={() => { requestRef.current?.abort(); requestRef.current = null; analysisInFlightRef.current = false; setView({ status: "idle" }); }}>Mégse</button>
+        <button className={styles.secondaryAction} type="button" onClick={() => {
+          requestRef.current?.abort();
+          requestRef.current = null;
+          analysisInFlightRef.current = false;
+          setView({ status: "idle" });
+        }}>Mégse</button>
       </section>
     );
   }
@@ -243,15 +146,14 @@ export function LearningPreview({ source, onStartOver, authenticated }: {
   }
 
   if (view.status === "ready") {
-    return (
-      <section className={styles.learningPreview} aria-labelledby="learning-preview-title">
-        <span className={styles.stepBadge}>3 / 3 · Első tanulási kép</span>
-        <h2 id="learning-preview-title">Most már érthetőbb.</h2>
-        <p className={styles.previewLead}>{view.cached ? "A saját munkameneted ellenőrzött eredményét mutatjuk." : "Az elemzés elkészült és privát tanulási eredményként elmentve."}</p>
-        <ResultPreview analysis={view.analysis} />
-        <button className={styles.mainAction} type="button" onClick={onStartOver}>Új forrást hozok</button>
-      </section>
-    );
+    return view.analysis.analysisStatus === "ready" ? (
+      <LearningPlayer
+        sessionId={view.sessionId}
+        analysis={view.analysis}
+        localPlaybackUrl={source.kind === "text" ? undefined : source.localPlaybackUrl}
+        onStartOver={onStartOver}
+      />
+    ) : <DegradedResult analysis={view.analysis} onStartOver={onStartOver} />;
   }
 
   return (

@@ -1213,6 +1213,679 @@
   }
 }
 
+/* Milestone 6: calm, progressive learning player. */
+.learningPlayer {
+  width: min(760px, 100%);
+  min-height: 650px;
+  margin: 0 auto;
+  padding: clamp(20px, 4vw, 34px);
+  text-align: left;
+}
+
+.lessonProgress {
+  position: sticky;
+  z-index: 4;
+  top: 10px;
+  padding: 13px 16px;
+  border: 1px solid var(--glass-line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--glass-strong) 92%, transparent);
+  box-shadow: 0 14px 34px -28px rgba(27, 33, 64, 0.62);
+  backdrop-filter: blur(18px);
+}
+
+.lessonProgress > div:first-child {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.lessonProgress strong {
+  overflow: hidden;
+  color: var(--ink);
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lessonProgress span {
+  color: var(--ink-soft);
+  font-weight: 800;
+}
+
+.lessonProgressTrack {
+  height: 7px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ink) 9%, transparent);
+}
+
+.lessonProgressTrack i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--purple), var(--cyan));
+  transition: width 260ms ease;
+}
+
+.lessonBack {
+  min-height: 42px;
+  margin: 16px 0 0 4px;
+  padding: 0 10px;
+  border: 0;
+  color: var(--ink-soft);
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.lessonStage {
+  animation: lessonEnter 280ms ease-out;
+}
+
+@keyframes lessonEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
+}
+
+.lessonCard {
+  width: 100%;
+  margin: 18px auto 0;
+  padding: clamp(26px, 5vw, 48px);
+  border: 1px solid var(--line);
+  border-radius: clamp(24px, 4vw, 32px);
+  background: var(--glass-strong);
+  box-shadow: 0 30px 70px -48px rgba(27, 33, 64, 0.62);
+}
+
+.lessonEyebrow {
+  display: block;
+  color: var(--purple);
+  font: 800 0.68rem/1.4 var(--font-display), sans-serif;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.lessonCard > h2 {
+  max-width: 18ch;
+  margin-top: 10px;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+}
+
+.lessonCard > h2:focus {
+  outline: none;
+}
+
+.lessonMeaning {
+  margin-top: 30px;
+  padding: 24px;
+  border-left: 4px solid var(--cyan);
+  border-radius: 0 20px 20px 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 10%, transparent), color-mix(in srgb, var(--purple) 7%, transparent));
+  font: 650 clamp(1.2rem, 3vw, 1.65rem)/1.55 var(--font-display), sans-serif;
+}
+
+.meaningDetails {
+  margin-top: 20px;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  color: var(--ink-soft);
+}
+
+.meaningDetails summary {
+  color: var(--purple);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.meaningDetails p,
+.meaningTone p {
+  margin-top: 10px;
+  line-height: 1.55;
+}
+
+.meaningTone,
+.lessonNote {
+  margin-top: 18px;
+  padding: 15px 17px;
+  border-radius: 16px;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--purple) 7%, transparent);
+}
+
+.meaningTone span,
+.lessonNote strong {
+  color: var(--ink);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.lessonNote p + p {
+  margin-top: 7px;
+}
+
+.lessonPrimary,
+.lessonPrimaryLink {
+  min-height: 52px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--white);
+  background: var(--ink);
+  box-shadow: 0 18px 36px -22px rgba(27, 33, 64, 0.72);
+  cursor: pointer;
+  font: 750 0.94rem/1 var(--font-display), sans-serif;
+  text-decoration: none;
+}
+
+.lessonPrimary:disabled {
+  cursor: not-allowed;
+  opacity: 0.42;
+}
+
+:global(html[data-theme="dark"]) .lessonPrimary,
+:global(html[data-theme="dark"]) .lessonPrimaryLink {
+  color: #0b1020;
+  background: var(--white);
+}
+
+.chunkHero {
+  display: grid;
+  gap: 10px;
+  margin-top: 30px;
+  padding: 26px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 42%, var(--line));
+  border-radius: 24px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cyan) 9%, transparent), color-mix(in srgb, var(--purple) 8%, transparent));
+}
+
+.chunkHero strong {
+  overflow-wrap: anywhere;
+  font: 800 clamp(1.65rem, 5vw, 3rem)/1.05 var(--font-display), sans-serif;
+  letter-spacing: -0.04em;
+}
+
+.chunkHero span {
+  color: var(--ink-soft);
+  font-size: 1rem;
+}
+
+.chunkMetadata,
+.chunkBase,
+.chunkContext,
+.chunkLens,
+.lessonLead,
+.selfPracticeNote {
+  margin-top: 14px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.chunkMetadata {
+  color: var(--purple);
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.chunkBase span {
+  margin-right: 8px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.chunkLens {
+  font-weight: 750;
+}
+
+.phraseSaveButton {
+  min-height: 44px;
+  margin-top: 20px;
+  padding: 0 17px;
+  border: 1px solid color-mix(in srgb, var(--purple) 44%, var(--line));
+  border-radius: 999px;
+  color: var(--purple);
+  background: transparent;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.phraseSaveButton:disabled {
+  cursor: default;
+  opacity: 0.72;
+}
+
+.mutationStatus,
+.persistenceStatus {
+  min-height: 20px;
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.persistenceStatus {
+  margin-inline: 6px;
+  color: var(--danger);
+}
+
+.grammarInsights,
+.transferChallenge {
+  display: grid;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.grammarInsights article {
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--purple) 6%, transparent);
+}
+
+.grammarInsights h3,
+.transferChallenge h3 {
+  font-size: 1.18rem;
+}
+
+.grammarInsights p,
+.transferChallenge li p {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.transferChallenge {
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--cyan) 38%, var(--line));
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--cyan) 7%, transparent);
+}
+
+.transferChallenge > span {
+  color: var(--cyan);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.transferChallenge ul {
+  display: grid;
+  gap: 10px;
+  margin-top: 3px;
+}
+
+.transferChallenge li {
+  padding: 13px 15px;
+  border-radius: 14px;
+  background: var(--glass-strong);
+}
+
+.sayPhrase {
+  margin-top: 30px;
+  padding: 26px;
+  border: 0;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--purple), color-mix(in srgb, var(--cyan) 70%, var(--purple)));
+  color: var(--white);
+  font: 800 clamp(1.65rem, 5vw, 3rem)/1.15 var(--font-display), sans-serif;
+  overflow-wrap: anywhere;
+}
+
+.sayGuidance,
+.localReplay {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+}
+
+.sayGuidance p {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.sayGuidance ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.sayGuidance li {
+  padding: 6px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--purple) 10%, transparent);
+}
+
+.localReplay span {
+  display: block;
+  margin-bottom: 10px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.localReplay audio {
+  width: 100%;
+}
+
+.selfPracticeNote {
+  font-size: 0.76rem;
+}
+
+.recallPrompt {
+  margin-top: 28px;
+  font: 650 clamp(1.15rem, 3vw, 1.45rem)/1.45 var(--font-display), sans-serif;
+}
+
+.recallChoices {
+  display: grid;
+  gap: 10px;
+  margin-top: 22px;
+  padding: 0;
+  border: 0;
+}
+
+.recallChoices legend {
+  margin-bottom: 9px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.recallChoices label {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.recallChoices input {
+  position: absolute;
+  opacity: 0;
+}
+
+.recallChoices span {
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--glass-strong) 88%, transparent);
+  font-weight: 700;
+}
+
+.recallChoices input:checked + span {
+  border-color: var(--purple);
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--purple) 22%, transparent);
+}
+
+.recallChoices input:focus-visible + span {
+  outline: 3px solid var(--cyan);
+  outline-offset: 3px;
+}
+
+.fillAnswer {
+  display: grid;
+  gap: 8px;
+  margin-top: 22px;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.fillAnswer input {
+  min-height: 54px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  color: var(--ink);
+  background: var(--glass-strong);
+  font-size: 1rem;
+}
+
+.recallFeedback {
+  margin-top: 22px;
+  padding: 18px;
+  border: 1px solid;
+  border-radius: 18px;
+}
+
+.recallFeedback:focus {
+  outline: none;
+}
+
+.correctFeedback {
+  border-color: color-mix(in srgb, var(--success) 42%, var(--line));
+  background: color-mix(in srgb, var(--success) 8%, transparent);
+}
+
+.incorrectFeedback {
+  border-color: color-mix(in srgb, var(--purple) 38%, var(--line));
+  background: color-mix(in srgb, var(--purple) 7%, transparent);
+}
+
+.recallFeedback p {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.completionCard {
+  text-align: center;
+}
+
+.completionCard > h2 {
+  max-width: 22ch;
+  margin-inline: auto;
+}
+
+.completionRobot {
+  position: relative;
+  width: 120px;
+  height: 96px;
+  margin: -12px auto 6px;
+}
+
+.completionRobot img {
+  object-fit: contain;
+}
+
+.completionSummary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.completionSummary div {
+  padding: 16px 10px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: color-mix(in srgb, var(--cyan) 6%, transparent);
+}
+
+.completionSummary dt {
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.completionSummary dd {
+  margin: 7px 0 0;
+  font: 800 1.3rem/1 var(--font-display), sans-serif;
+}
+
+.selfCheck {
+  margin-top: 24px;
+  padding: 18px;
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--purple) 7%, transparent);
+}
+
+.selfCheck h3 {
+  font-size: 1.08rem;
+}
+
+.selfCheck > div {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 13px;
+}
+
+.selfCheck button {
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--glass-strong);
+  cursor: pointer;
+  font-weight: 750;
+}
+
+.selfCheck button[aria-pressed="true"] {
+  border-color: var(--purple);
+  color: var(--purple);
+  box-shadow: inset 0 0 0 1px var(--purple);
+}
+
+.selfCheck p {
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+}
+
+.lessonSecondaryLink {
+  display: block;
+  width: fit-content;
+  margin: 15px auto 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.continueLearningLink {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+  padding: 0 13px;
+  border-radius: 999px;
+  color: var(--white);
+  background: var(--ink);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+:global(html[data-theme="dark"]) .continueLearningLink {
+  color: #0b1020;
+  background: var(--white);
+}
+
+.learningRouteMain {
+  position: relative;
+  z-index: 1;
+  width: min(820px, calc(100% - 32px));
+  flex: 1;
+  margin: 0 auto;
+  padding: clamp(34px, 6vw, 64px) 0;
+}
+
+.savedLearningHeading {
+  max-width: 680px;
+  margin: 0 auto 22px;
+  text-align: center;
+}
+
+.savedLearningHeading h1 {
+  margin-top: 10px;
+  font-size: clamp(2rem, 5vw, 3.7rem);
+}
+
+.savedLearningHeading p {
+  margin-top: 12px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.backToStudio {
+  display: block;
+  width: fit-content;
+  margin: 18px auto 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+@media (max-width: 680px) {
+  .learningPlayer {
+    min-height: 620px;
+    padding: 12px 10px 24px;
+  }
+
+  .lessonProgress {
+    top: 6px;
+  }
+
+  .lessonProgress strong {
+    font-size: 0.68rem;
+  }
+
+  .lessonCard {
+    margin-top: 13px;
+    padding: 26px 18px 30px;
+  }
+
+  .lessonPrimary,
+  .lessonPrimaryLink {
+    width: 100%;
+  }
+
+  .completionSummary {
+    grid-template-columns: 1fr;
+  }
+
+  .selfCheck > div {
+    flex-direction: column;
+  }
+
+  .selfCheck button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lessonStage {
+    animation: none;
+  }
+
+  .lessonProgressTrack i {
+    transition: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .listenRing,
   .pulseVisual span,

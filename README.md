@@ -66,6 +66,30 @@ A verziózott `learning-analysis-v1` objektum természetes magyar jelentést, va
 
 A stabil providerutasítás külön marad a dinamikus forrástól. A forrás `untrusted_user_source` adatobjektumként kerül a kérés user-input részébe: a benne szereplő „SYSTEM”, „ignore”, webes keresési vagy titokkérő szöveg nyelvi adat, nem utasítás. A modellnek nincs retrieval- vagy forrásazonosító eszköze, és tilos környező/hiányzó művet rekonstruálnia.
 
+## Milestone 6 — teljes első tanulási kör
+
+A validált `ready` eredmény már nem egyszerre jelenik meg. A nyugodt, mobilbarát tanulási lejátszó egyetlen világos következő művelettel vezeti végig a tanulót:
+
+```text
+Mit jelent?
+→ Ezt érdemes megjegyezni
+→ Miért pont így mondják? + új transfer példa
+→ Mondd ki te is
+→ Emlékszel?
+→ Kész
+```
+
+- A természetes magyar jelentés az első jutalom; a szó szerinti szerkezet csak kinyitható segítség.
+- A chunkok egyenként jelennek meg, és hitelesített felhasználó kifejezetten elmentheti őket a privát `user_phrasebook` táblába.
+- A phrasebook-művelet csak `sessionId` + chunk index hivatkozást kap. A szerver az owned, validált `learning_result` rekordból olvassa újra a kanonikus származtatott mezőket; teljes forrást nem fogad el.
+- A feleletválasztós és kitöltős recall helyben, determinisztikus válaszmetaadatból értékelődik. Nincs új AI-hívás vagy AI-alapú pontozás.
+- A `learning_progress` a központosított `meaning/chunks/grammar/say/recall/completed` lépéseket, egész százalékot és a végső recall pontszámot menti.
+- A `/app/learning/[sessionId]` útvonal kizárólag saját, RLS-védett eredményt nyit meg, és a mentett lépéstől folytat. Az eredeti forrás vagy hang nem szükséges hozzá.
+- Aktív audio/mikrofonos munkamenetben a rövid helyi Blob visszahallgatható, de nem kerül storage-ba, és frissítés után nem állítjuk vissza.
+- A befejezés utáni megértési önellenőrzés jelenleg helyi UI-állapot; nem vezettünk be harmadik fél analitikát.
+
+A Milestone 6 nem indít második nyelvi generálást. A már validált privát eredményt használja, így a lecke renderelésének és pontozásának AI-költsége nulla.
+
 ## Adatvédelem és perzisztencia
 
 - nincs Supabase Storage, audio bucket, fájlrendszeres mentés vagy nyilvános audio URL;
@@ -141,4 +165,4 @@ A script kizárólag biztonságos modell/latencia/token- és strukturális darab
 
 ## Kifejezetten halasztva
 
-Nincs teljes Milestone 6 progresszív tanulási lejátszó, quizpontozás, spaced repetition, automatikus phrasebook-mentés, kiejtésértékelés, TTS, további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.
+Nincs kiejtésértékelés vagy beszédpontozás (Milestone 7), TTS, automatikus phrasebook-mentés, spaced repetition vagy review scheduling (Milestone 8), további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.

@@ -1,6 +1,6 @@
 "use client";
 
-import { useReducer, useRef, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import type { AudioClipInput } from "@/lib/input/audio-clip";
 import { createInitialInputStudioState, inputStudioReducer } from "@/lib/input/studio-reducer";
 import type { InputMode } from "@/lib/input/types";
@@ -47,6 +47,14 @@ export function InputStudio({
   const [verifyError, setVerifyError] = useState("");
   const requestRef = useRef<{ controller: AbortController; sequence: number } | null>(null);
   const requestSequence = useRef(0);
+  const localPlaybackUrlRef = useRef<string | null>(null);
+
+  function clearLocalPlayback() {
+    if (localPlaybackUrlRef.current) URL.revokeObjectURL(localPlaybackUrlRef.current);
+    localPlaybackUrlRef.current = null;
+  }
+
+  useEffect(() => () => clearLocalPlayback(), []);
 
   function cancelRequest() {
     requestSequence.current += 1;
@@ -56,6 +64,7 @@ export function InputStudio({
 
   function selectMode(mode: InputMode) {
     cancelRequest();
+    clearLocalPlayback();
     setTranscription({ status: "idle" });
     setVerifyError("");
     dispatch({ type: "SELECT_MODE", mode });
@@ -94,6 +103,9 @@ export function InputStudio({
     setVerifyError("");
     try {
       await verifyTranscript(transcription.sessionId, sourceStatus);
+      clearLocalPlayback();
+      const localPlaybackUrl = URL.createObjectURL(transcription.clip.blob);
+      localPlaybackUrlRef.current = localPlaybackUrl;
       dispatch({
         type: "COMPLETE_TRANSCRIPT",
         source: {
@@ -102,6 +114,7 @@ export function InputStudio({
           sourceStatus,
           sessionId: transcription.sessionId,
           durationMs: transcription.clip.durationMs,
+          localPlaybackUrl,
         },
       });
       window.dispatchEvent(new CustomEvent("cantu:learning-session-saved", {
@@ -195,7 +208,7 @@ export function InputStudio({
       {state.status === "analysis_ready" ? (
         <LearningPreview
           source={state.source}
-          onStartOver={() => { setTranscription({ status: "idle" }); dispatch({ type: "START_OVER" }); }}
+          onStartOver={() => { clearLocalPlayback(); setTranscription({ status: "idle" }); dispatch({ type: "START_OVER" }); }}
           authenticated={authenticated}
         />
       ) : null}

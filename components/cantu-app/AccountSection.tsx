@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { signOutAction } from "@/app/app/actions";
 import { deleteLearningSessionAction } from "@/app/app/learning-actions";
 import { AuthPanel } from "@/components/auth/AuthPanel";
@@ -79,11 +80,33 @@ export function AccountSection({ auth, history, notice }: AccountSectionProps) {
       const id = (event as CustomEvent<{ id: string }>).detail?.id;
       if (id) setRemovedIds((current) => current.includes(id) ? current : [...current, id]);
     }
+    function updateProgress(event: Event) {
+      const detail = (event as CustomEvent<{
+        sessionId: string;
+        stage: string;
+        percentComplete: number;
+        recallScore: number | null;
+      }>).detail;
+      if (!detail?.sessionId) return;
+      setOptimisticItems((current) => current.map((item) => item.id === detail.sessionId
+        ? {
+            ...item,
+            progress: {
+              stage: detail.stage,
+              percentComplete: detail.percentComplete,
+              recallScore: detail.recallScore,
+              lastOpenedAt: new Date().toISOString(),
+            },
+          }
+        : item));
+    }
     window.addEventListener("cantu:learning-session-saved", addSavedSession);
     window.addEventListener("cantu:learning-session-deleted", removeDeletedSession);
+    window.addEventListener("cantu:learning-progress-updated", updateProgress);
     return () => {
       window.removeEventListener("cantu:learning-session-saved", addSavedSession);
       window.removeEventListener("cantu:learning-session-deleted", removeDeletedSession);
+      window.removeEventListener("cantu:learning-progress-updated", updateProgress);
     };
   }, []);
 
@@ -156,6 +179,11 @@ export function AccountSection({ auth, history, notice }: AccountSectionProps) {
                 <div aria-hidden="true">
                   <i style={{ width: progressLabel(item.progress.percentComplete) }} />
                 </div>
+                {item.sourceStatus === "ready" ? (
+                  <Link className={styles.continueLearningLink} href={`/app/learning/${item.id}`}>
+                    {item.progress.percentComplete >= 100 ? "Megnézem" : "Folytatom"}
+                  </Link>
+                ) : null}
                 <DeleteLearningControl sessionId={item.id} action={deleteLearningSessionAction} />
               </div>
             </li>
