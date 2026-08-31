@@ -2,7 +2,6 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { AuthContext } from "@/lib/auth/types";
 import type { LearningHistorySnapshot } from "@/lib/data/learning-sessions";
-import { saveLearningSessionAction } from "@/app/app/learning-actions";
 import type { InputMode } from "@/lib/input/types";
 import { AccountSection } from "./AccountSection";
 import { InputStudio } from "./InputStudio";
@@ -45,7 +44,6 @@ export function AppShell({ initialMode, auth, history, authNotice }: AppShellPro
         <InputStudio
           initialMode={initialMode}
           authenticated={auth.status === "authenticated"}
-          saveAction={saveLearningSessionAction}
         />
         <AccountSection auth={auth} history={history} notice={authNotice} />
       </section>

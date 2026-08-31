@@ -45,29 +45,35 @@ export function AccountSection({ auth, history, notice }: AccountSectionProps) {
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const persistedItems = history.status === "ready" ? history.items : [];
   const visibleItems = [
-    ...optimisticItems.filter((item) => !persistedItems.some((persisted) => persisted.id === item.id)),
-    ...persistedItems,
+    ...optimisticItems,
+    ...persistedItems.filter((persisted) => !optimisticItems.some((item) => item.id === persisted.id)),
   ].filter((item) => !removedIds.includes(item.id));
 
   useEffect(() => {
     function addSavedSession(event: Event) {
       const detail = (event as CustomEvent<{
         id: string;
-        inputType: "microphone" | "audio_file";
-        sourceStatus: "user_verified" | "user_edited";
-        sourceDurationMs: number;
+        inputType: "microphone" | "audio_file" | "text";
+        sourceStatus: "user_verified" | "user_edited" | "ready";
+        sourceDurationMs: number | null;
+        sourceCharCount?: number | null;
         createdAt: string;
       }>).detail;
       if (!detail?.id) return;
-      setOptimisticItems((current) => current.some((item) => item.id === detail.id) ? current : [{
-        id: detail.id,
-        inputType: detail.inputType,
-        sourceStatus: detail.sourceStatus,
-        sourceDurationMs: detail.sourceDurationMs,
-        sourceCharCount: null,
-        createdAt: detail.createdAt,
-        progress: { stage: "new", percentComplete: 0, lastOpenedAt: null },
-      }, ...current]);
+      setOptimisticItems((current) => {
+        const item: LearningHistoryItem = {
+          id: detail.id,
+          inputType: detail.inputType,
+          sourceStatus: detail.sourceStatus,
+          sourceDurationMs: detail.sourceDurationMs,
+          sourceCharCount: detail.sourceCharCount ?? null,
+          createdAt: detail.createdAt,
+          progress: { stage: "new", percentComplete: 0, lastOpenedAt: null },
+        };
+        return current.some((existing) => existing.id === detail.id)
+          ? current.map((existing) => existing.id === detail.id ? { ...existing, ...item } : existing)
+          : [item, ...current];
+      });
     }
     function removeDeletedSession(event: Event) {
       const id = (event as CustomEvent<{ id: string }>).detail?.id;

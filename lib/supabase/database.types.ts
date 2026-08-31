@@ -560,6 +560,18 @@ export type Database = {
         Args: { target_session_id: string }
         Returns: boolean
       }
+      complete_learning_analysis: {
+        Args: {
+          p_attempt_id: string
+          p_generator_version: string
+          p_latency_ms: number
+          p_result_json: Json
+          p_schema_version: string
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
       complete_transcription_attempt: {
         Args: {
           p_attempt_id: string
@@ -569,6 +581,34 @@ export type Database = {
           p_status: string
         }
         Returns: boolean
+      }
+      fail_learning_analysis: {
+        Args: {
+          p_attempt_id: string
+          p_error_code: string
+          p_latency_ms: number
+          p_session_id: string
+          p_user_id: string
+        }
+        Returns: boolean
+      }
+      start_learning_analysis: {
+        Args: {
+          p_generator_version: string
+          p_input_type: string
+          p_provider: string
+          p_schema_version: string
+          p_session_id: string
+          p_source_char_count: number
+          p_source_fingerprint: string
+          p_source_status: string
+          p_user_id: string
+        }
+        Returns: {
+          cached_result: Json
+          learning_session_id: string
+          processing_attempt_id: string
+        }[]
       }
       start_transcription_session: {
         Args: {

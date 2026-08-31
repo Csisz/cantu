@@ -6,11 +6,30 @@ import { InputStudio } from "./InputStudio";
 const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 
-const saveAction = vi.fn(async () => ({ status: "success" as const }));
 const transcriptSessionId = "10000000-0000-4000-8000-000000000099";
 
+function readyAnalysis(sourceText = "Ci vediamo domani") {
+  return {
+    schemaVersion: "learning-analysis-v1",
+    analysisStatus: "ready",
+    sourceLanguage: "it",
+    explanationLanguage: "hu",
+    languageAssessment: { detectedLanguage: "it", confidence: "high", noteHu: null },
+    meaning: { naturalHu: "Holnap reggel találkozunk?", literalStructureHu: null, toneHu: "Hétköznapi kérdés." },
+    chunks: [{ sourceText, meaningHu: "Holnap találkozunk.", kind: "phrase", baseForm: null, register: "neutral", contextNoteHu: null }],
+    grammar: [{ titleHu: "Jelen idő", explanationHu: "Az olasz jelen idő közeljövőre is utalhat." }],
+    pronunciation: { focus: ["vediamo"], noteHu: "Szövegalapú tipp: figyeld az összefolyó ritmust." },
+    transfer: [{ italian: "Ci sentiamo questa sera?", meaningHu: "Beszélünk ma este?" }],
+    recall: [
+      { id: "q1", type: "meaning_choice", promptHu: "Mikor találkoznak?", options: [{ id: "a", text: "Holnap" }, { id: "b", text: "Tegnap" }], correctOptionId: "a", correctText: null, explanationHu: "A domani jelentése holnap." },
+      { id: "q2", type: "fill_chunk", promptHu: "Egészítsd ki a kifejezést.", options: [], correctOptionId: null, correctText: "vediamo", explanationHu: "A vediamo a vedere ragozott alakja." },
+    ],
+    warnings: [],
+  };
+}
+
 function renderStudio(initialMode: "listen" | "audio" | "text", authenticated = false) {
-  return render(<InputStudio initialMode={initialMode} authenticated={authenticated} saveAction={saveAction} />);
+  return render(<InputStudio initialMode={initialMode} authenticated={authenticated} />);
 }
 
 const sampleRate = 16_000;
@@ -48,7 +67,38 @@ function mockTranscriptionFetch() {
       });
     }
     if (url === "/api/transcribe/verify") return Response.json({ ok: true });
+    if (url === "/api/analyze") {
+      return Response.json({
+        analysis: readyAnalysis(),
+        sessionId: transcriptSessionId,
+        cached: false,
+        generation: {
+          model: "cantu-test-analysis", reasoningEffort: "low",
+          schemaVersion: "learning-analysis-v1", promptVersion: "cantu-analysis-v1", latencyMs: 10,
+        },
+      });
+    }
     throw new Error(`Unexpected fetch: ${url} ${init?.method}`);
+  });
+}
+
+function mockAnalysisFetch(analysis: unknown = readyAnalysis()) {
+  return vi.spyOn(globalThis, "fetch").mockImplementation(async (input) => {
+    if (String(input) === "/api/analyze") {
+      return Response.json({
+        analysis,
+        sessionId: transcriptSessionId,
+        cached: false,
+        generation: {
+          model: "cantu-test-analysis",
+          reasoningEffort: "low",
+          schemaVersion: "learning-analysis-v1",
+          promptVersion: "cantu-analysis-v1",
+          latencyMs: 12,
+        },
+      });
+    }
+    throw new Error(`Unexpected fetch: ${String(input)}`);
   });
 }
 
@@ -78,15 +128,21 @@ describe("InputStudio", () => {
     expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
   });
 
-  it("continues from text to exact source confirmation and local learning preview", () => {
+  it("continues from text to exact source confirmation and reaches the auth boundary only on explicit analysis", () => {
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
     renderStudio("text");
     fireEvent.change(screen.getByLabelText("Olasz szöveg"), { target: { value: "Ci vediamo domani mattina?" } });
     fireEvent.click(screen.getByRole("button", { name: "Ezt értsük meg" }));
     expect(screen.getByRole("heading", { name: "Ezt fogjuk elemezni" })).toBeInTheDocument();
     expect(screen.getByText("Ci vediamo domani mattina?")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Rendben, tovább" }));
-    expect(screen.getByRole("heading", { name: /Innen épül majd fel/i })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Mentéshez jelentkezz be" })).toHaveAttribute("href", "#library-title");
+    expect(screen.getByRole("heading", { name: /Készen áll a megértésre/i })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
+    const analyzeButton = screen.getByRole("button", { name: "Értsük meg" });
+    fireEvent.click(analyzeButton);
+    fireEvent.click(analyzeButton);
+    expect(screen.getByRole("heading", { name: "Az elemzéshez jelentkezz be" })).toBeInTheDocument();
+    expect(fetchSpy).not.toHaveBeenCalled();
   });
 
   it("blocks empty text and clamps text to 2,000 characters", () => {
@@ -136,10 +192,21 @@ describe("InputStudio", () => {
     expect([...body.values()]).not.toContain("private-full-source.wav");
 
     fireEvent.click(screen.getByRole("button", { name: "Igen, pontos" }));
-    await screen.findByRole("heading", { name: /Innen épül majd fel/i });
-    expect(screen.getByText(/metaadatai elmentve/i)).toBeInTheDocument();
+    await screen.findByRole("heading", { name: /Készen áll a megértésre/i });
     const verificationCall = fetchSpy.mock.calls.find(([url]) => url === "/api/transcribe/verify")!;
     expect(verificationCall[1]?.body).toBe(JSON.stringify({ sessionId: transcriptSessionId, status: "user_verified" }));
+    const analyzeButton = screen.getByRole("button", { name: "Értsük meg" });
+    fireEvent.click(analyzeButton);
+    fireEvent.click(analyzeButton);
+    expect(await screen.findByRole("heading", { name: "Mit jelent?" })).toBeInTheDocument();
+    expect(fetchSpy.mock.calls.filter(([url]) => url === "/api/analyze")).toHaveLength(1);
+    const analysisCall = fetchSpy.mock.calls.find(([url]) => url === "/api/analyze")!;
+    expect(JSON.parse(String(analysisCall[1]?.body))).toMatchObject({
+      text: "Ci vediamo domani mattina?",
+      sourceStatus: "user_verified",
+      inputType: "audio_file",
+      sessionId: transcriptSessionId,
+    });
   });
 
   it("marks a corrected transcript as user_edited without sending the text to persistence", async () => {
@@ -156,15 +223,71 @@ describe("InputStudio", () => {
     const verificationCall = fetchSpy.mock.calls.find(([url]) => url === "/api/transcribe/verify")!;
     expect(verificationCall[1]?.body).toBe(JSON.stringify({ sessionId: transcriptSessionId, status: "user_edited" }));
     expect(String(verificationCall[1]?.body)).not.toContain("Ci vediamo");
+    fireEvent.click(screen.getByRole("button", { name: "Értsük meg" }));
+    await screen.findByRole("heading", { name: "Mit jelent?" });
+    const analysisCall = fetchSpy.mock.calls.find(([url]) => url === "/api/analyze")!;
+    expect(JSON.parse(String(analysisCall[1]?.body))).toMatchObject({
+      text: "Ci vediamo domani sera?",
+      sourceStatus: "user_edited",
+    });
+    expect(String(analysisCall[1]?.body)).not.toContain("Ci vediamo domani mattina?");
   });
 
-  it("builds a metadata-only text save form without source text", () => {
+  it("analyzes confirmed text only after an explicit action and renders the structured preview", async () => {
+    const fetchSpy = mockAnalysisFetch();
     renderStudio("text", true);
-    fireEvent.change(screen.getByLabelText("Olasz szöveg"), { target: { value: "Questo testo resta locale." } });
+    const text = "Ci vediamo domani mattina?";
+    fireEvent.change(screen.getByLabelText("Olasz szöveg"), { target: { value: text } });
     fireEvent.click(screen.getByRole("button", { name: "Ezt értsük meg" }));
     fireEvent.click(screen.getByRole("button", { name: "Rendben, tovább" }));
-    const form = screen.getByRole("button", { name: "Mentés a tanulásaim közé" }).closest("form")!;
-    expect(Object.fromEntries(new FormData(form).entries())).toEqual({ inputType: "text", sourceCharCount: "26" });
-    expect([...new FormData(form).values()]).not.toContain("Questo testo resta locale.");
+    expect(fetchSpy).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole("button", { name: "Értsük meg" }));
+    expect(await screen.findByRole("heading", { name: "Mit jelent?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Miért így mondják?" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Használd máshol is" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Emlékszel?" })).toBeInTheDocument();
+    expect(fetchSpy).toHaveBeenCalledTimes(1);
+    const call = fetchSpy.mock.calls[0]!;
+    expect(call[0]).toBe("/api/analyze");
+    expect(JSON.parse(String(call[1]?.body))).toEqual({
+      text,
+      sourceStatus: "text_direct",
+      inputType: "text",
+    });
+  });
+
+  it("shows a recoverable Hungarian provider error", async () => {
+    vi.spyOn(globalThis, "fetch").mockResolvedValue(Response.json(
+      { error: { code: "provider_unavailable" } },
+      { status: 503 },
+    ));
+    renderStudio("text", true);
+    fireEvent.change(screen.getByLabelText("Olasz szöveg"), { target: { value: "Possiamo parlarne domani?" } });
+    fireEvent.click(screen.getByRole("button", { name: "Ezt értsük meg" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rendben, tovább" }));
+    fireEvent.click(screen.getByRole("button", { name: "Értsük meg" }));
+    expect(await screen.findByRole("alert")).toHaveTextContent(/átmenetileg nem érhető el/i);
+    expect(screen.getByRole("button", { name: "Újrapróbálom" })).toBeEnabled();
+  });
+
+  it("renders a restrained non-Italian state without fabricated lesson sections", async () => {
+    mockAnalysisFetch({
+      schemaVersion: "learning-analysis-v1",
+      analysisStatus: "not_italian",
+      sourceLanguage: "it",
+      explanationLanguage: "hu",
+      languageAssessment: { detectedLanguage: "en", confidence: "high", noteHu: "Ez angolnak tűnik." },
+      meaning: null,
+      chunks: [], grammar: [], pronunciation: null, transfer: [], recall: [],
+      warnings: [{ code: "not_italian", messageHu: "Nem olasz forrás." }],
+    });
+    renderStudio("text", true);
+    fireEvent.change(screen.getByLabelText("Olasz szöveg"), { target: { value: "This is definitely English." } });
+    fireEvent.click(screen.getByRole("button", { name: "Ezt értsük meg" }));
+    fireEvent.click(screen.getByRole("button", { name: "Rendben, tovább" }));
+    fireEvent.click(screen.getByRole("button", { name: "Értsük meg" }));
+    expect(await screen.findByRole("heading", { name: "Ez valószínűleg nem olasz." })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Mit jelent?" })).not.toBeInTheDocument();
   });
 });

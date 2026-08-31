@@ -19,3 +19,15 @@ export function isE2ESTTMockEnabled() {
     process.env.CANTU_E2E_STT_MOCK === "1"
   );
 }
+
+export function isE2EAnalysisMockEnabled() {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.CANTU_E2E_ANALYSIS_MOCK === "1"
+  );
+}
+
+export function getServerSupabaseSecret() {
+  const value = process.env.SUPABASE_SECRET_KEY?.trim();
+  return value && value.length >= 16 ? value : null;
+}

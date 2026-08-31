@@ -25,7 +25,7 @@ export function inputStudioReducer(
         : state;
     }
     case "COMPLETE_TRANSCRIPT":
-      return { status: "learning_preview", source: action.source };
+      return { status: "analysis_ready", source: action.source };
     case "EDIT_SOURCE":
       if (state.status === "entry") return state;
       return {
@@ -35,7 +35,7 @@ export function inputStudioReducer(
       };
     case "CONFIRM_SOURCE":
       return state.status === "source_confirmation"
-        ? { status: "learning_preview", source: state.source }
+        ? { status: "analysis_ready", source: state.source }
         : state;
     case "START_OVER":
       return {

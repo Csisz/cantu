@@ -22,7 +22,7 @@ export function SourceConfirmation({ source, onConfirm, onEdit }: SourceConfirma
         </button>
       </div>
       <p className={styles.mockNotice}>
-        A szöveg közvetlen forrásként halad tovább; AI-elemzés ebben a mérföldkőben nem indul.
+        A következő lépésben te indíthatod el az elemzést. Addig semmilyen fizetős AI-hívás nem történik.
       </p>
     </section>
   );

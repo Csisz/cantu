@@ -22,7 +22,7 @@ describe("Input Studio domain", () => {
       source: { kind: "text", text: "Ci vediamo domani?", sourceStatus: "text_direct" },
     });
     const preview = inputStudioReducer(confirmation, { type: "CONFIRM_SOURCE" });
-    expect(preview.status).toBe("learning_preview");
+    expect(preview.status).toBe("analysis_ready");
   });
 
   it("keeps empty text at entry and restores submitted text for editing", () => {

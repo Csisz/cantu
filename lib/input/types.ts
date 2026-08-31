@@ -21,7 +21,7 @@ export type LearningSource =
 export type InputStudioState =
   | { status: "entry"; mode: InputMode; draftText?: string }
   | { status: "source_confirmation"; source: TextLearningSource }
-  | { status: "learning_preview"; source: LearningSource };
+  | { status: "analysis_ready"; source: LearningSource };
 
 export type InputStudioAction =
   | { type: "SELECT_MODE"; mode: InputMode }

@@ -10,7 +10,6 @@ import { AudioFileInput } from "./audio/AudioFileInput";
 import { InputModeTabs } from "./InputModeTabs";
 import { LearningPreview } from "./LearningPreview";
 import { ListenInput } from "./listen/ListenInput";
-import type { PersistenceAction } from "./SaveLearningControl";
 import { SourceConfirmation } from "./SourceConfirmation";
 import { TextInput } from "./text/TextInput";
 import { TranscriptConfirmation } from "./TranscriptConfirmation";
@@ -38,11 +37,9 @@ const transcriptionErrorCopy: Record<TranscriptionErrorCode, string> = {
 export function InputStudio({
   initialMode,
   authenticated,
-  saveAction,
 }: {
   initialMode: InputMode;
   authenticated: boolean;
-  saveAction: PersistenceAction;
 }) {
   const [state, dispatch] = useReducer(inputStudioReducer, initialMode, createInitialInputStudioState);
   const [transcription, setTranscription] = useState<TranscriptionView>({ status: "idle" });
@@ -195,12 +192,11 @@ export function InputStudio({
         <SourceConfirmation source={state.source} onConfirm={() => dispatch({ type: "CONFIRM_SOURCE" })} onEdit={() => dispatch({ type: "EDIT_SOURCE" })} />
       ) : null}
 
-      {state.status === "learning_preview" ? (
+      {state.status === "analysis_ready" ? (
         <LearningPreview
           source={state.source}
           onStartOver={() => { setTranscription({ status: "idle" }); dispatch({ type: "START_OVER" }); }}
           authenticated={authenticated}
-          saveAction={saveAction}
         />
       ) : null}
     </div>
