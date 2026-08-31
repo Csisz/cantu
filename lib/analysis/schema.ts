@@ -1,7 +1,8 @@
 import { z } from "zod";
 
-export const LEARNING_ANALYSIS_SCHEMA_VERSION = "learning-analysis-v1" as const;
-export const LEARNING_ANALYSIS_PROMPT_VERSION = "cantu-analysis-v1" as const;
+export const LEARNING_ANALYSIS_V1_SCHEMA_VERSION = "learning-analysis-v1" as const;
+export const LEARNING_ANALYSIS_SCHEMA_VERSION = "learning-analysis-v2" as const;
+export const LEARNING_ANALYSIS_PROMPT_VERSION = "cantu-analysis-v2" as const;
 export const DEFAULT_LANGUAGE_ANALYSIS_MODEL = "gpt-5.6-terra" as const;
 export const DEFAULT_ANALYSIS_REASONING_EFFORT = "low" as const;
 export const MAX_ANALYSIS_ATTEMPTS_PER_HOUR = 10;
@@ -23,9 +24,9 @@ export const verifiedLearningSourceSchema = z
 
 const boundedText = (maximum: number) => z.string().trim().min(1).max(maximum);
 
-export const learningAnalysisSchema = z
+export const learningAnalysisV1Schema = z
   .object({
-    schemaVersion: z.literal(LEARNING_ANALYSIS_SCHEMA_VERSION),
+    schemaVersion: z.literal(LEARNING_ANALYSIS_V1_SCHEMA_VERSION),
     analysisStatus: z.enum(["ready", "not_italian", "insufficient_source"]),
     sourceLanguage: z.literal("it"),
     explanationLanguage: z.literal("hu"),
@@ -129,9 +130,74 @@ export const learningAnalysisSchema = z
   })
   .strict();
 
+const learningChunkV2Schema = learningAnalysisV1Schema.shape.chunks.element
+  .extend({
+    priority: z.enum(["core", "useful", "extra"]),
+    whyUsefulHu: boundedText(500),
+  })
+  .strict();
+
+const grammarV2Schema = learningAnalysisV1Schema.shape.grammar.element
+  .extend({
+    example: z.object({ italian: boundedText(300), meaningHu: boundedText(400) }).strict().nullable(),
+  })
+  .strict();
+
+const recallV2Schema = learningAnalysisV1Schema.shape.recall.element
+  .extend({
+    difficulty: z.enum(["understand", "use", "recall"]),
+    mistakeFeedbackHu: boundedText(600),
+    reinforcementExample: z
+      .object({ italian: boundedText(300), meaningHu: boundedText(400) })
+      .strict()
+      .nullable(),
+  })
+  .strict();
+
+export const learningAnalysisV2Schema = learningAnalysisV1Schema
+  .extend({
+    schemaVersion: z.literal(LEARNING_ANALYSIS_SCHEMA_VERSION),
+    shortcut: z
+      .object({
+        takeawayHu: boundedText(700),
+        coreChunkIndexes: z.array(z.number().int().min(0).max(5)).min(1).max(3),
+      })
+      .strict()
+      .nullable(),
+    annotations: z
+      .array(
+        z
+          .object({
+            id: z.string().trim().regex(/^[a-z0-9_-]{1,64}$/),
+            sourceText: boundedText(300),
+            category: z.enum(["core", "useful_phrase", "grammar", "pronunciation", "tone"]),
+            chunkIndex: z.number().int().min(0).max(5).nullable(),
+            titleHu: boundedText(160),
+            explanationHu: boundedText(600),
+          })
+          .strict(),
+      )
+      .max(8),
+    chunks: z.array(learningChunkV2Schema).max(6),
+    grammar: z.array(grammarV2Schema).max(2),
+    recall: z.array(recallV2Schema).max(4),
+  })
+  .strict();
+
+export const learningAnalysisSchema = z.union([
+  learningAnalysisV2Schema,
+  learningAnalysisV1Schema,
+]);
+
 export type VerifiedSourceStatus = z.infer<typeof verifiedSourceStatusSchema>;
 export type VerifiedLearningSource = z.infer<typeof verifiedLearningSourceSchema>;
+export type LearningAnalysisV1 = z.infer<typeof learningAnalysisV1Schema>;
+export type LearningAnalysisV2 = z.infer<typeof learningAnalysisV2Schema>;
 export type LearningAnalysis = z.infer<typeof learningAnalysisSchema>;
+
+export function isLearningAnalysisV2(analysis: LearningAnalysis): analysis is LearningAnalysisV2 {
+  return analysis.schemaVersion === LEARNING_ANALYSIS_SCHEMA_VERSION;
+}
 
 const nullableString = (maximum: number) => ({
   type: ["string", "null"],
@@ -182,6 +248,8 @@ export const learningAnalysisJsonSchema = objectSchema({
         enum: ["neutral", "formal", "colloquial", "slang", "poetic", null],
       },
       contextNoteHu: nullableString(500),
+      priority: { type: "string", enum: ["core", "useful", "extra"] },
+      whyUsefulHu: { type: "string", minLength: 1, maxLength: 500 },
     }),
   },
   grammar: {
@@ -190,6 +258,15 @@ export const learningAnalysisJsonSchema = objectSchema({
     items: objectSchema({
       titleHu: { type: "string", minLength: 1, maxLength: 160 },
       explanationHu: { type: "string", minLength: 1, maxLength: 800 },
+      example: {
+        anyOf: [
+          objectSchema({
+            italian: { type: "string", minLength: 1, maxLength: 300 },
+            meaningHu: { type: "string", minLength: 1, maxLength: 400 },
+          }),
+          { type: "null" },
+        ],
+      },
     }),
   },
   pronunciation: {
@@ -235,6 +312,17 @@ export const learningAnalysisJsonSchema = objectSchema({
       correctOptionId: nullableString(64),
       correctText: nullableString(300),
       explanationHu: { type: "string", minLength: 1, maxLength: 600 },
+      difficulty: { type: "string", enum: ["understand", "use", "recall"] },
+      mistakeFeedbackHu: { type: "string", minLength: 1, maxLength: 600 },
+      reinforcementExample: {
+        anyOf: [
+          objectSchema({
+            italian: { type: "string", minLength: 1, maxLength: 300 },
+            meaningHu: { type: "string", minLength: 1, maxLength: 400 },
+          }),
+          { type: "null" },
+        ],
+      },
     }),
   },
   warnings: {
@@ -243,6 +331,35 @@ export const learningAnalysisJsonSchema = objectSchema({
     items: objectSchema({
       code: { type: "string", pattern: "^[a-z0-9_-]{1,64}$" },
       messageHu: { type: "string", minLength: 1, maxLength: 500 },
+    }),
+  },
+  shortcut: {
+    anyOf: [
+      objectSchema({
+        takeawayHu: { type: "string", minLength: 1, maxLength: 700 },
+        coreChunkIndexes: {
+          type: "array",
+          minItems: 1,
+          maxItems: 3,
+          items: { type: "integer", minimum: 0, maximum: 5 },
+        },
+      }),
+      { type: "null" },
+    ],
+  },
+  annotations: {
+    type: "array",
+    maxItems: 8,
+    items: objectSchema({
+      id: { type: "string", pattern: "^[a-z0-9_-]{1,64}$" },
+      sourceText: { type: "string", minLength: 1, maxLength: 300 },
+      category: {
+        type: "string",
+        enum: ["core", "useful_phrase", "grammar", "pronunciation", "tone"],
+      },
+      chunkIndex: { type: ["integer", "null"], minimum: 0, maximum: 5 },
+      titleHu: { type: "string", minLength: 1, maxLength: 160 },
+      explanationHu: { type: "string", minLength: 1, maxLength: 600 },
     }),
   },
 });

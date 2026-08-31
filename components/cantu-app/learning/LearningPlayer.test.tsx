@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import type { LearningAnalysis } from "@/lib/analysis/schema";
+import type { LearningAnalysisV1, LearningAnalysisV2 } from "@/lib/analysis/schema";
 import { LearningPlayer } from "./LearningPlayer";
 
 const saveProgress = vi.fn(async (input: unknown) => {
@@ -19,7 +19,7 @@ vi.mock("@/lib/learning/client", () => ({
 
 const sessionId = "10000000-0000-4000-8000-000000000001";
 
-function analysis(overrides: Partial<LearningAnalysis> = {}): LearningAnalysis {
+function analysis(overrides: Partial<LearningAnalysisV1> = {}): LearningAnalysisV1 {
   return {
     schemaVersion: "learning-analysis-v1",
     analysisStatus: "ready",
@@ -40,6 +40,43 @@ function analysis(overrides: Partial<LearningAnalysis> = {}): LearningAnalysis {
     ],
     warnings: [],
     ...overrides,
+  };
+}
+
+function analysisV2(): LearningAnalysisV2 {
+  const base = analysis();
+  return {
+    ...base,
+    schemaVersion: "learning-analysis-v2",
+    chunks: base.chunks.map((chunk, index) => ({
+      ...chunk,
+      priority: index === 0 ? "core" : "useful",
+      whyUsefulHu: index === 0 ? "Ezzel mondod el természetesen, hogy alig vársz valamit." : "Jól használható időpont-egyeztetéskor.",
+    })),
+    grammar: base.grammar.map((note) => ({
+      ...note,
+      example: { italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom, hogy elinduljak." },
+    })),
+    recall: base.recall.map((item, index) => ({
+      ...item,
+      difficulty: index === 0 ? "understand" : "recall",
+      mistakeFeedbackHu: "A teljes kifejezés lelkes várakozást fejez ki.",
+      reinforcementExample: index === 0
+        ? { italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom, hogy elinduljak." }
+        : null,
+    })),
+    shortcut: {
+      takeawayHu: "A non vedere l'ora a mondat legfontosabb, újrahasználható fordulata.",
+      coreChunkIndexes: [0],
+    },
+    annotations: [{
+      id: "core-1",
+      sourceText: "non vedo l'ora",
+      category: "core",
+      chunkIndex: 0,
+      titleHu: "A mondat kulcsa",
+      explanationHu: "Nem szó szerint értjük: lelkes várakozást fejez ki.",
+    }],
   };
 }
 
@@ -91,6 +128,7 @@ describe("LearningPlayer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Mentem ezt" }));
     await screen.findByRole("button", { name: "Elmentve ✓" });
     expect(savePhrase).toHaveBeenCalledWith({ sessionId, chunkIndex: 0 });
+    expect(JSON.stringify(savePhrase.mock.calls.at(-1))).not.toContain("Non vedo l'ora di vederti domani.");
     expect(JSON.stringify(savePhrase.mock.calls[0])).not.toContain("Alig várom, hogy holnap lássalak");
     fireEvent.click(screen.getByRole("button", { name: "Mutasd a következőt" }));
     expect(screen.getByText("vederti domani")).toBeVisible();
@@ -154,5 +192,47 @@ describe("LearningPlayer", () => {
     fireEvent.click(screen.getByRole("button", { name: "Nagyjából" }));
     expect(screen.getByRole("button", { name: "Nagyjából" })).toHaveAttribute("aria-pressed", "true");
     expect(screen.getByText(/csak ezen az oldalon marad/i)).toBeVisible();
+  });
+
+  it("bridges an active v2 source through annotation and Shortcut into the lesson", async () => {
+    render(
+      <LearningPlayer
+        sessionId={sessionId}
+        analysis={analysisV2()}
+        activeSourceText="Non vedo l'ora di vederti domani."
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Innen tanulunk" })).toBeVisible();
+    expect(screen.getByText("Non vedo l'ora", { selector: "button span" })).toBeVisible();
+    expect(screen.getByLabelText("Cantu robot útmutatása")).toHaveTextContent("Nézzük meg");
+    fireEvent.click(screen.getByRole("button", { name: /Non vedo l'ora.*A lényeg/i }));
+    expect(await screen.findByRole("heading", { name: "A mondat kulcsa" })).toBeVisible();
+    expect(screen.getByText(/nem a forrás része/i)).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Mentem ezt" }));
+    await screen.findByRole("button", { name: "Elmentve ✓" });
+    expect(savePhrase).toHaveBeenCalledWith({ sessionId, chunkIndex: 0 });
+    fireEvent.click(screen.getByRole("button", { name: "Mondd ki ezt" }));
+    expect(screen.getByRole("button", { name: "Felveszem" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Magyarázat bezárása" }));
+    fireEvent.click(screen.getByRole("button", { name: "Mutasd a Cantu Shortcutot" }));
+    expect(await screen.findByRole("heading", { name: "Cantu Shortcut" })).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Megvan a Shortcut" }));
+    expect(await screen.findByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+    expect(screen.getByText("Shortcut megvan ✓")).toBeVisible();
+  });
+
+  it("keeps v2 resume useful without reconstructing the complete source", async () => {
+    render(
+      <LearningPlayer
+        sessionId={sessionId}
+        analysis={analysisV2()}
+        initialProgress={{ stage: "grammar", recallScore: null }}
+      />,
+    );
+    expect(screen.getByRole("heading", { name: "Az eredeti forrást nem mentettük el." })).toBeVisible();
+    expect(screen.queryByText("Non vedo l'ora di vederti domani.")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Mutasd a Cantu Shortcutot" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Megvan a Shortcut" }));
+    expect(await screen.findByRole("heading", { name: "Miért pont így mondják?" })).toBeVisible();
   });
 });

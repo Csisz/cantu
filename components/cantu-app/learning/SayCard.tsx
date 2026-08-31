@@ -1,6 +1,8 @@
 import type { LearningAnalysis } from "@/lib/analysis/schema";
+import { ROBOT_STATE_BY_STAGE } from "@/lib/learning/robot-coach";
 import { sayPracticeTarget } from "@/lib/learning/player";
 import styles from "../app.module.css";
+import { RobotCoach } from "./RobotCoach";
 import { ShadowingPractice } from "./ShadowingPractice";
 
 export function SayCard({
@@ -19,6 +21,7 @@ export function SayCard({
   const target = sayPracticeTarget(analysis)!;
   return (
     <section className={styles.lessonCard} aria-labelledby="lesson-say-title">
+      <RobotCoach state={ROBOT_STATE_BY_STAGE.say!} />
       <span className={styles.lessonEyebrow}>Shadowing · érthetőség és magabiztos használat</span>
       <h2 id="lesson-say-title" tabIndex={-1}>Mondd ki te is</h2>
       <blockquote className={styles.sayPhrase} lang="it">{target.text}</blockquote>

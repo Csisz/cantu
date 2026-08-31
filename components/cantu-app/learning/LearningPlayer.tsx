@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { LearningAnalysis } from "@/lib/analysis/schema";
+import { isLearningAnalysisV2, type LearningAnalysis } from "@/lib/analysis/schema";
 import { persistLearningProgress, persistPhraseReference } from "@/lib/learning/client";
 import {
   calculateRecallScore,
@@ -16,12 +16,17 @@ import {
 } from "@/lib/learning/player";
 import styles from "../app.module.css";
 import { ChunkCard } from "./ChunkCard";
+import { AnnotatedSourceView } from "./AnnotatedSourceView";
+import { CantuShortcutCard } from "./CantuShortcutCard";
 import { CompletionCard } from "./CompletionCard";
 import { GrammarCard } from "./GrammarCard";
 import { LearningProgress } from "./LearningProgress";
 import { MeaningCard } from "./MeaningCard";
 import { RecallCard } from "./RecallCard";
 import { SayCard } from "./SayCard";
+import { RobotCoach } from "./RobotCoach";
+
+type GuidePhase = "source" | "resume" | "shortcut" | null;
 
 export type LearningPlayerProps = {
   sessionId: string;
@@ -29,6 +34,7 @@ export type LearningPlayerProps = {
   initialProgress?: { stage: string; recallScore: number | null } | null;
   initialSavedChunkIndices?: number[];
   localPlaybackUrl?: string;
+  activeSourceText?: string;
   feedbackAuthenticated?: boolean;
   onStartOver?: () => void;
 };
@@ -39,6 +45,7 @@ export function LearningPlayer({
   initialProgress,
   initialSavedChunkIndices = [],
   localPlaybackUrl,
+  activeSourceText,
   feedbackAuthenticated = true,
   onStartOver,
 }: LearningPlayerProps) {
@@ -52,11 +59,14 @@ export function LearningPlayer({
   const [savingChunk, setSavingChunk] = useState<number | null>(null);
   const [saveMessages, setSaveMessages] = useState<Record<number, string>>({});
   const [persistenceMessage, setPersistenceMessage] = useState("");
+  const [guidePhase, setGuidePhase] = useState<GuidePhase>(() => (
+    isLearningAnalysisV2(analysis) ? (activeSourceText ? "source" : "resume") : null
+  ));
   const cardRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     cardRef.current?.querySelector<HTMLElement>("h2")?.focus();
-  }, [stage, chunkIndex, recallIndex]);
+  }, [stage, chunkIndex, recallIndex, guidePhase]);
 
   async function persistProgress(nextStage: LessonStage, recallScore: number | null = null) {
     const result = await persistLearningProgress({ sessionId, stage: nextStage, recallScore });
@@ -103,6 +113,43 @@ export function LearningPlayer({
   const correctCount = answers.length > 0
     ? answers.filter((answer) => answer.correct).length
     : null;
+
+  if (isLearningAnalysisV2(analysis) && guidePhase) {
+    return (
+      <section className={styles.learningPlayer} aria-label="Cantu vezetett tanulási lecke">
+        <div ref={cardRef} className={styles.lessonStage}>
+          {guidePhase === "source" && activeSourceText ? (
+            <AnnotatedSourceView
+              sourceText={activeSourceText}
+              analysis={analysis}
+              sessionId={sessionId}
+              authenticated={feedbackAuthenticated}
+              savedChunks={savedChunks}
+              savingChunk={savingChunk}
+              saveMessages={saveMessages}
+              onSaveChunk={(index) => void saveChunk(index)}
+              onNext={() => setGuidePhase("shortcut")}
+            />
+          ) : null}
+          {guidePhase === "resume" ? (
+            <section className={`${styles.lessonCard} ${styles.sourceUnavailableCard}`} aria-labelledby="source-unavailable-title">
+              <RobotCoach state="welcome" message="Folytassuk onnan, ahol abbahagytad." />
+              <span className={styles.lessonEyebrow}>Privát folytatás</span>
+              <h2 id="source-unavailable-title" tabIndex={-1}>Az eredeti forrást nem mentettük el.</h2>
+              <p>Az eredeti forrást adatvédelmi okból nem mentettük el. A tanult részeket továbbra is eléred.</p>
+              <button className={styles.lessonPrimary} type="button" onClick={() => setGuidePhase("shortcut")}>
+                Mutasd a Cantu Shortcutot
+              </button>
+            </section>
+          ) : null}
+          {guidePhase === "shortcut" ? (
+            <CantuShortcutCard analysis={analysis} onNext={() => setGuidePhase(null)} />
+          ) : null}
+        </div>
+        <p className={styles.persistenceStatus} role="status">{persistenceMessage}</p>
+      </section>
+    );
+  }
 
   return (
     <section className={styles.learningPlayer} aria-label="Cantu tanulási lecke">

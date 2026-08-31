@@ -26,6 +26,8 @@ const validAnalysis = {
   transfer: [],
   recall: [],
   warnings: [],
+  shortcut: null,
+  annotations: [],
 };
 
 function responseWith(output: unknown, status = 200) {

@@ -150,6 +150,7 @@ export function LearningPreview({ source, onStartOver, authenticated }: {
       <LearningPlayer
         sessionId={view.sessionId}
         analysis={view.analysis}
+        activeSourceText={source.text}
         feedbackAuthenticated={authenticated}
         localPlaybackUrl={source.kind === "text" ? undefined : source.localPlaybackUrl}
         onStartOver={onStartOver}

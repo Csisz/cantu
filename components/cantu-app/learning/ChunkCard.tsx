@@ -49,6 +49,12 @@ export function ChunkCard({
       <p className={styles.chunkMetadata}>{metadata}</p>
       {chunk.baseForm ? <p className={styles.chunkBase}><span>Alapalak</span> <b lang="it">{chunk.baseForm}</b></p> : null}
       {chunk.contextNoteHu ? <p className={styles.chunkContext}>{chunk.contextNoteHu}</p> : null}
+      {"whyUsefulHu" in chunk ? (
+        <div className={styles.chunkWhyUseful}>
+          <strong>Miért viszed magaddal?</strong>
+          <p>{chunk.whyUsefulHu}</p>
+        </div>
+      ) : null}
       {chunk.kind !== "word" ? <p className={styles.chunkLens}>Ezt így, egyben érdemes megjegyezni.</p> : null}
       <button
         className={styles.phraseSaveButton}

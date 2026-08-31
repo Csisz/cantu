@@ -48,12 +48,23 @@ async function signInWithDeterministicAuth(page: Page) {
 }
 
 async function loadAudio(page: Page, buffer = createGeneratedToneWav()) {
-  await page.getByLabel("Hangfájl kiválasztása").setInputFiles({
+  const fixture = {
     name: "full-source-never-upload.wav",
     mimeType: "audio/wav",
     buffer,
-  });
-  await expect(page.getByRole("img", { name: /Helyi hullámforma/i })).toBeVisible({ timeout: 30_000 });
+  };
+  const fileInput = page.getByLabel("Hangfájl kiválasztása");
+  const waveform = page.getByRole("img", { name: /Helyi hullámforma/i });
+  await fileInput.setInputFiles(fixture);
+  try {
+    await waveform.waitFor({ state: "visible", timeout: 15_000 });
+  } catch {
+    // Chromium can occasionally abandon Web Audio decode while the dev server recompiles.
+    // Re-selecting the same generated fixture exercises the product's supported retry path.
+    await fileInput.setInputFiles([]);
+    await fileInput.setInputFiles(fixture);
+  }
+  await expect(waveform).toBeVisible({ timeout: 30_000 });
 }
 
 async function setRange(page: Page, label: string, value: number) {
@@ -132,12 +143,46 @@ async function completeShadowingPractice(page: Page) {
   await page.getByRole("button", { name: "Tovább" }).click();
 }
 
+async function enterMeaning(page: Page, options: { shadowHighlight?: boolean; saveHighlight?: boolean } = {}) {
+  await expect(page.locator("h2").filter({
+    hasText: /^(Innen tanulunk|Az eredeti forrást nem mentettük el\.|Mit jelent\?)$/,
+  }).first()).toBeVisible({ timeout: 15_000 });
+  const annotatedSource = page.getByRole("heading", { name: "Innen tanulunk" });
+  if (await annotatedSource.isVisible().catch(() => false)) {
+    await expect(page.getByLabel("Cantu robot útmutatása")).toContainText("Nézzük meg");
+    const highlight = page.locator("blockquote button").first();
+    await expect(highlight).toBeVisible();
+    await highlight.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { name: "A mondat kulcsa" })).toBeVisible();
+    await expect(page.getByText(/nem a forrás része/i)).toBeVisible();
+    if (options.saveHighlight) {
+      await page.getByRole("button", { name: "Mentem ezt" }).click();
+      await expect(page.getByRole("button", { name: "Elmentve ✓" })).toBeVisible();
+    }
+    if (options.shadowHighlight) {
+      await page.getByRole("button", { name: "Mondd ki ezt" }).click();
+      await completeShadowingPractice(page);
+    }
+    await page.getByRole("button", { name: "Magyarázat bezárása" }).click();
+    await page.getByRole("button", { name: "Mutasd a Cantu Shortcutot" }).click();
+  } else if (await page.getByRole("heading", { name: "Az eredeti forrást nem mentettük el." }).isVisible().catch(() => false)) {
+    await page.getByRole("button", { name: "Mutasd a Cantu Shortcutot" }).click();
+  }
+  const shortcut = page.getByRole("heading", { name: "Cantu Shortcut" });
+  if (await shortcut.isVisible().catch(() => false)) {
+    await expect(page.getByText(/már sokkal többet értesz/i)).toBeVisible();
+    await page.getByRole("button", { name: "Megvan a Shortcut" }).click();
+  }
+  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+}
+
 async function reachRecall(page: Page, options: {
   savePhrase?: boolean;
   practiceShadowing?: boolean;
   expectLocalReference?: boolean;
 } = {}) {
-  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await enterMeaning(page);
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "20");
   await page.getByRole("button", { name: "Tovább" }).click();
   await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
@@ -164,10 +209,16 @@ async function reachRecall(page: Page, options: {
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "90");
 }
 
-async function completeRecall(page: Page, expectedChunk: string) {
-  await page.getByText("Természetes, hétköznapi közlés").click();
+async function completeRecall(page: Page, expectedChunk: string, firstAnswerWrong = false) {
+  await page.getByText(firstAnswerWrong ? "Hivatalos jogi szöveg" : "Természetes, hétköznapi közlés").click();
   await page.getByRole("button", { name: "Ellenőrzöm" }).click();
-  await expect(page.getByText("Pontosan.")).toBeVisible();
+  if (firstAnswerWrong) {
+    await expect(page.getByText("Nézzük meg.")).toBeVisible();
+    await expect(page.getByText(/hétköznapi hangvétel a fontos/i)).toBeVisible();
+    await expect(page.getByText("Új gyakorlópélda · nem a forrás része")).toBeVisible();
+  } else {
+    await expect(page.getByText("Pontosan.")).toBeVisible();
+  }
   await page.getByRole("button", { name: "Következő kérdés" }).click();
   await page.getByLabel("Olasz válasz").fill(expectedChunk.toLocaleUpperCase("it-IT"));
   await page.getByRole("button", { name: "Ellenőrzöm" }).click();
@@ -175,7 +226,7 @@ async function completeRecall(page: Page, expectedChunk: string) {
   await page.getByRole("button", { name: "Befejezem" }).click();
   await expect(page.getByRole("heading", { name: "Most már érted — és van belőle valami, amit te is tudsz használni." })).toBeVisible();
   await expect(page.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "100");
-  await expect(page.getByText("2 / 2")).toBeVisible();
+  await expect(page.getByText(firstAnswerWrong ? "1 / 2" : "2 / 2")).toBeVisible();
 }
 
 test("landing to text confirmation and explicit unauthenticated analysis boundary", async ({ page }) => {
@@ -278,7 +329,7 @@ test("authenticated audio sends only selected clip and requires confirmation", a
   await page.getByRole("button", { name: "Igen, pontos" }).click();
   await expect(page.getByRole("heading", { name: /Készen áll a megértésre/i })).toBeVisible();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await enterMeaning(page);
   await reachRecall(page, { practiceShadowing: true, expectLocalReference: true });
   const practiceRequest = await page.evaluate(() => (window as typeof window & {
     __cantuPronunciationRequest?: {
@@ -330,7 +381,7 @@ test("transcript can be explicitly edited before verification", async ({ page })
   await page.getByRole("button", { name: "Javítás megerősítése" }).click();
   await expect(page.getByText("Ci vediamo domani sera?")).toBeVisible();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await enterMeaning(page);
   const analysisBody = await page.evaluate(() => (window as typeof window & { __cantuAnalysisBody?: string }).__cantuAnalysisBody);
   expect(JSON.parse(analysisBody ?? "{}")).toMatchObject({
     text: "Ci vediamo domani sera?",
@@ -377,7 +428,7 @@ test("authentication history, derived text result, deletion and sign-out remain 
   await page.getByRole("button", { name: "Ezt értsük meg" }).click();
   await page.getByRole("button", { name: "Rendben, tovább" }).click();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await enterMeaning(page);
   const history = page.getByRole("region", { name: "Saját tanulásaim" });
   await expect(history.getByText("Szöveg", { exact: true })).toBeVisible();
   await expect(history.getByText(privateText)).toHaveCount(0);
@@ -401,7 +452,8 @@ test("authenticated text analysis completes the full progressive learning loop",
   await page.getByRole("button", { name: "Ezt értsük meg" }).click();
   await page.getByRole("button", { name: "Rendben, tovább" }).click();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await reachRecall(page, { savePhrase: true, practiceShadowing: true });
+  await enterMeaning(page, { saveHighlight: true, shadowHighlight: true });
+  await reachRecall(page);
   const practiceRequest = await page.evaluate(() => (window as typeof window & {
     __cantuPronunciationRequest?: { fields: string[]; hasTargetText: boolean; hasSourceText: boolean };
   }).__cantuPronunciationRequest);
@@ -410,7 +462,7 @@ test("authenticated text analysis completes the full progressive learning loop",
     hasTargetText: false,
     hasSourceText: false,
   });
-  await completeRecall(page, "Non vedo l'ora");
+  await completeRecall(page, "Non vedo l'ora", true);
   await expect(page.getByText("Mentett kifejezés").locator("..").getByText("1", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Igen" }).click();
   await expect(page.getByRole("button", { name: "Igen" })).toHaveAttribute("aria-pressed", "true");
@@ -430,7 +482,7 @@ test("saved ready session resumes from persisted stage without original source",
   await page.getByRole("button", { name: "Ezt értsük meg" }).click();
   await page.getByRole("button", { name: "Rendben, tovább" }).click();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await enterMeaning(page);
   const progressResponse = page.waitForResponse((response) => response.url().endsWith("/api/learning/progress"));
   await page.getByRole("button", { name: "Tovább" }).click();
   await progressResponse;
@@ -441,8 +493,12 @@ test("saved ready session resumes from persisted stage without original source",
     page.waitForURL(/\/app\/learning\/[0-9a-f-]+$/, { timeout: 15_000 }),
     row.getByRole("link", { name: "Folytatom" }).click(),
   ]);
-  await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Az eredeti forrást nem mentettük el." })).toBeVisible();
   await expect(page.getByText("Possiamo parlarne domani mattina?")).toHaveCount(0);
+  await page.getByRole("button", { name: "Mutasd a Cantu Shortcutot" }).click();
+  await expect(page.getByRole("heading", { name: "Cantu Shortcut" })).toBeVisible();
+  await page.getByRole("button", { name: "Megvan a Shortcut" }).click();
+  await expect(page.getByRole("heading", { name: "Ezt érdemes megjegyezni" })).toBeVisible();
   await page.getByRole("button", { name: "Ezt értem" }).click();
   await page.getByRole("button", { name: "Jöhet a próba" }).click();
   await expect(page.getByRole("heading", { name: "Mondd ki te is" })).toBeVisible();
@@ -476,7 +532,7 @@ test("instruction-like source remains data and cannot enable retrieval or change
   await expect(page.getByText(injection)).toBeVisible();
   await page.getByRole("button", { name: "Rendben, tovább" }).click();
   await page.getByRole("button", { name: "Értsük meg" }).click();
-  await expect(page.getByRole("heading", { name: "Mit jelent?" })).toBeVisible();
+  await enterMeaning(page);
   await expect(page.getByText("HACKED")).toHaveCount(0);
   await expect(page.getByText(/következő sor/i)).toHaveCount(0);
 });

@@ -1,8 +1,9 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
+import { ROBOT_STATE_BY_STAGE } from "@/lib/learning/robot-coach";
 import styles from "../app.module.css";
+import { RobotCoach } from "./RobotCoach";
 
 export function CompletionCard({
   chunkCount,
@@ -22,9 +23,7 @@ export function CompletionCard({
   const [selfCheck, setSelfCheck] = useState<"Igen" | "Nagyjából" | "Még nem" | null>(null);
   return (
     <section className={`${styles.lessonCard} ${styles.completionCard}`} aria-labelledby="lesson-complete-title" aria-live="polite">
-      <div className={styles.completionRobot} aria-hidden="true">
-        <Image src="/robot.png" alt="" fill sizes="120px" />
-      </div>
+      <RobotCoach state={ROBOT_STATE_BY_STAGE.completed!} />
       <span className={styles.lessonEyebrow}>Kész</span>
       <h2 id="lesson-complete-title" tabIndex={-1}>Most már érted — és van belőle valami, amit te is tudsz használni.</h2>
       <dl className={styles.completionSummary}>

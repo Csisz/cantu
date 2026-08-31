@@ -38,7 +38,16 @@ function readyAnalysis(chunk = "Non vedo l'ora") {
     explanationLanguage: "hu",
     languageAssessment: { detectedLanguage: "it", confidence: "high", noteHu: null },
     meaning: { naturalHu: "Alig várom, hogy holnap lássalak.", literalStructureHu: null, toneHu: null },
-    chunks: [{ sourceText: chunk, meaningHu: "Alig vár valamit.", kind: "idiom", baseForm: null, register: "neutral", contextNoteHu: null }],
+    chunks: [{
+      sourceText: chunk,
+      meaningHu: "Alig vár valamit.",
+      kind: "idiom",
+      baseForm: null,
+      register: "neutral",
+      contextNoteHu: null,
+      priority: "core",
+      whyUsefulHu: "Gyakori, újrahasználható fordulat.",
+    }],
     grammar: [],
     pronunciation: null,
     transfer: [{ italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom, hogy elinduljak." }],
@@ -47,13 +56,22 @@ function readyAnalysis(chunk = "Non vedo l'ora") {
         id: "meaning-1", type: "meaning_choice", promptHu: "Mit jelent?",
         options: [{ id: "a", text: "Alig várja" }, { id: "b", text: "Nem akarja" }],
         correctOptionId: "a", correctText: null, explanationHu: "Várakozást fejez ki.",
+        difficulty: "understand", mistakeFeedbackHu: "A fordulat várakozást fejez ki.",
+        reinforcementExample: { italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom az indulást." },
       },
       {
         id: "fill-1", type: "fill_chunk", promptHu: "Egészítsd ki.", options: [],
         correctOptionId: null, correctText: "l'ora", explanationHu: "Ez a rögzült fordulat része.",
+        difficulty: "recall", mistakeFeedbackHu: "A teljes fordulat részeként idézd fel.",
+        reinforcementExample: null,
       },
     ],
     warnings: [],
+    shortcut: { takeawayHu: "A non vedere l'ora fordulat viszi a lényeget.", coreChunkIndexes: [0] },
+    annotations: [{
+      id: "core-1", sourceText: chunk, category: "core", chunkIndex: 0,
+      titleHu: "Kulcskifejezés", explanationHu: "Ezt érdemes egyben megjegyezni.",
+    }],
   };
 }
 

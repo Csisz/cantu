@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import type { LearningAnalysis } from "@/lib/analysis/schema";
 import { gradeRecallAnswer, type RecallAnswerState } from "@/lib/learning/player";
+import { robotStateForRecall } from "@/lib/learning/robot-coach";
 import styles from "../app.module.css";
+import { RobotCoach } from "./RobotCoach";
 
 function correctAnswerText(item: LearningAnalysis["recall"][number]) {
   if (item.correctText) return item.correctText;
@@ -80,9 +82,20 @@ export function RecallCard({
             role="status"
             tabIndex={-1}
           >
+            <RobotCoach state={robotStateForRecall(answer.correct)} />
             <strong>{answer.correct ? "Pontosan." : "Nézzük meg."}</strong>
             {!answer.correct ? <p>A helyes válasz: <b lang="it">{correctAnswerText(item)}</b></p> : null}
-            <p>{item.explanationHu}</p>
+            <p>{!answer.correct && "mistakeFeedbackHu" in item ? item.mistakeFeedbackHu : item.explanationHu}</p>
+            {!answer.correct && "reinforcementExample" in item && item.reinforcementExample ? (
+              <div className={styles.reinforcementExample}>
+                <span>Új gyakorlópélda · nem a forrás része</span>
+                <strong lang="it">{item.reinforcementExample.italian}</strong>
+                <p>{item.reinforcementExample.meaningHu}</p>
+              </div>
+            ) : null}
+            {!answer.correct && "mistakeFeedbackHu" in item ? (
+              <p className={styles.recallExplanation}>{item.explanationHu}</p>
+            ) : null}
           </div>
           <button className={styles.lessonPrimary} type="button" onClick={onNext}>
             {index + 1 < total ? "Következő kérdés" : "Befejezem"}

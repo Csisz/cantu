@@ -12,6 +12,13 @@ export function GrammarCard({ analysis, onNext }: { analysis: LearningAnalysis; 
             <article key={note.titleHu}>
               <h3>{note.titleHu}</h3>
               <p>{note.explanationHu}</p>
+              {"example" in note && note.example ? (
+                <div className={styles.grammarExample}>
+                  <span>Új példa · nem a forrás része</span>
+                  <strong lang="it">{note.example.italian}</strong>
+                  <p>{note.example.meaningHu}</p>
+                </div>
+              ) : null}
             </article>
           ))}
         </div>

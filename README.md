@@ -113,6 +113,29 @@ célkifejezés
 
 Az OpenAI completed-file STT adaptere változatlanul a `gpt-transcribe` modellt használja. A kiejtési réteg providerfüggetlen, így később gazdagabb, bizonyítékalapú megfigyelések adhatók hozzá a React komponensek providerhez kötése nélkül. Külső szolgáltatói adatmegőrzésről a Cantu nem tesz általános ígéretet; nyilvános indulás előtt szerződéses és adatkezelési felülvizsgálat szükséges.
 
+## Milestone 8 — vezetett tanulás és Annotated Source
+
+Az új `learning-analysis-v2` eredmény az aktív, ellenőrzött forrást és a leckét láthatóan összeköti:
+
+```text
+Innen tanulunk (átmeneti teljes forrás + pontos kiemelések)
+→ Cantu Shortcut (1–3 központi elem)
+→ jelentés / chunkok / Why Here?
+→ shadowing
+→ okos, determinisztikus recall
+→ kis siker
+```
+
+- Az `AnnotatedSourceView` kizárólag az aktív React-állapotban lévő, felhasználó által hozott vagy ellenőrzött teljes szöveget mutatja. A kiemelések Unicode-, aposztróf- és whitespace-normalizálás mellett is pontos forrás-előforduláshoz kötöttek; átfedésük determinisztikusan rendezett.
+- A kiemelések szemantikus gombok. A kontextuspanel megmutatja a helyi jelentést, a használhatóságot és egy külön jelölt új tanítási példát; innen a kanonikus chunk menthető, illetve a meglévő M7 shadowing indítható.
+- A **Cantu Shortcut** a legkisebb, nagy pedagógiai értékű központi halmazt emeli ki. Ez 80/20 ihletésű heurisztika, nem matematikai megértési garancia.
+- A `RobotCoach` állapot-, copy- és assetleképezése központi. A robot csak fontos átmeneteknél jelenik meg; a jelenlegi statikus asset a dokumentált későbbi animációslotok biztonságos fallbackje, csökkentett mozgásnál nincs szükséges animáció.
+- A v2 recall már az eredeti elemzőhívásban kap célzott hibavisszajelzést, nehézségi ritmust és opcionális új megerősítő példát. Hibás válasz után nincs új AI-hívás; a pontozás változatlanul determinisztikus.
+- A régi `learning-analysis-v1` eredmények változtatás nélkül megnyithatók az M7 lejátszóval. A v2 eredmények külön schema- és promptverzióval cache-elődnek, ezért nincs csendes átértelmezés.
+- Folytatott leckénél a teljes forrást nem rekonstruáljuk chunkokból. A felület jelzi, hogy az eredetit adatvédelmi okból nem mentettük, majd a privát származtatott Shortcutból és leckéből folytatja.
+
+Az M8 egyetlen strukturált nyelvi elemzőhívást használ forrásonként: az annotáció, Shortcut, robot-copy, hibatámogatás és kártyák nem indítanak külön providerhívást.
+
 ## Adatvédelem és perzisztencia
 
 - nincs Supabase Storage, audio bucket, fájlrendszeres mentés vagy nyilvános audio URL;
@@ -189,4 +212,4 @@ A script kizárólag biztonságos modell/latencia/token- és strukturális darab
 
 ## Kifejezetten halasztva
 
-Nincs TTS, fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, spaced repetition vagy review scheduling (Milestone 8), beszélgetős tutor, további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.
+Nincs TTS, új fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, spaced repetition vagy adaptív review scheduling (Milestone 9), beszélgetős tutor, további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.

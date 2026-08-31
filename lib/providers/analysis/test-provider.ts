@@ -34,6 +34,8 @@ export class TestLanguageAnalysisProvider implements LanguageAnalysisProvider {
           transfer: [],
           recall: [],
           warnings: [{ code: "short_source", messageHu: "A forrás túl rövid a hasznos elemzéshez." }],
+          shortcut: null,
+          annotations: [],
         },
       };
     }
@@ -58,6 +60,8 @@ export class TestLanguageAnalysisProvider implements LanguageAnalysisProvider {
           transfer: [],
           recall: [],
           warnings: [{ code: "not_italian", messageHu: "A Cantu első verziója olaszhoz készült." }],
+          shortcut: null,
+          annotations: [],
         },
       };
     }
@@ -88,10 +92,13 @@ export class TestLanguageAnalysisProvider implements LanguageAnalysisProvider {
           baseForm: null,
           register: "neutral",
           contextNoteHu: "A pontos jelentést mindig a teljes mondat adja meg.",
+          priority: "core",
+          whyUsefulHu: "Ezt a részletet egyben megjegyezve más hétköznapi helyzetben is használhatod.",
         }],
         grammar: [{
           titleHu: "A mondat szerkezete",
           explanationHu: "Az olaszban a kifejezéseket gyakran érdemes szókapcsolatként megtanulni.",
+          example: { italian: "Ne parliamo dopo.", meaningHu: "Beszéljünk róla később." },
         }],
         pronunciation: {
           focus: [chunk],
@@ -110,6 +117,12 @@ export class TestLanguageAnalysisProvider implements LanguageAnalysisProvider {
             correctOptionId: "a",
             correctText: null,
             explanationHu: "A forrás társalgási olasz nyelvet használ.",
+            difficulty: "understand",
+            mistakeFeedbackHu: "Itt a hétköznapi hangvétel a fontos, nem egy hivatalos szövegtípus.",
+            reinforcementExample: {
+              italian: "Ci sentiamo più tardi.",
+              meaningHu: "Később beszélünk.",
+            },
           },
           {
             id: "chunk-1",
@@ -119,9 +132,24 @@ export class TestLanguageAnalysisProvider implements LanguageAnalysisProvider {
             correctOptionId: null,
             correctText: chunk,
             explanationHu: "A teljes szókapcsolat aktív felidézése segíti a későbbi használatot.",
+            difficulty: "recall",
+            mistakeFeedbackHu: "A kifejezést egyben idézd fel; ne fordítsd vissza szavanként.",
+            reinforcementExample: null,
           },
         ],
         warnings: [],
+        shortcut: {
+          takeawayHu: "Ha ezt az egy kifejezést egyben viszed magaddal, már megvan a mondat legjobban újrahasználható része.",
+          coreChunkIndexes: [0],
+        },
+        annotations: [{
+          id: "core-1",
+          sourceText: chunk,
+          category: "core",
+          chunkIndex: 0,
+          titleHu: "A mondat kulcsa",
+          explanationHu: "Ez a részlet viszi a mondat legfontosabb, továbbvihető gondolatát.",
+        }],
       },
     };
   }

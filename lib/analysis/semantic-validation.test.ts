@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  LEARNING_ANALYSIS_V1_SCHEMA_VERSION,
   LEARNING_ANALYSIS_SCHEMA_VERSION,
   learningAnalysisSchema,
   verifiedLearningSourceSchema,
@@ -32,8 +33,14 @@ function readyAnalysis(): LearningAnalysis {
       baseForm: "non vedere l'ora",
       register: "neutral",
       contextNoteHu: "Gyakori, természetes fordulat.",
+      priority: "core",
+      whyUsefulHu: "Gyakori, újrahasználható hétköznapi fordulat.",
     }],
-    grammar: [{ titleHu: "Di + főnévi igenév", explanationHu: "A di kapcsolja a várakozást a következő cselekvéshez." }],
+    grammar: [{
+      titleHu: "Di + főnévi igenév",
+      explanationHu: "A di kapcsolja a várakozást a következő cselekvéshez.",
+      example: { italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom, hogy elinduljak." },
+    }],
     pronunciation: { focus: ["l’ora", "vederti"], noteHu: "Szövegalapú tipp: figyeld az elíziót és a ritmust." },
     transfer: [{ italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom, hogy elinduljak." }],
     recall: [
@@ -45,6 +52,9 @@ function readyAnalysis(): LearningAnalysis {
         correctOptionId: "a",
         correctText: null,
         explanationHu: "A fordulat lelkes várakozást fejez ki.",
+        difficulty: "understand",
+        mistakeFeedbackHu: "A fordulat várakozást fejez ki, nem tiltást.",
+        reinforcementExample: { italian: "Non vedo l'ora di partire.", meaningHu: "Alig várom, hogy elinduljak." },
       },
       {
         id: "fill-1",
@@ -54,9 +64,24 @@ function readyAnalysis(): LearningAnalysis {
         correctOptionId: null,
         correctText: "l'ora",
         explanationHu: "A teljes fordulat: non vedere l'ora.",
+        difficulty: "recall",
+        mistakeFeedbackHu: "A névelő az aposztróffal együtt a kifejezés része.",
+        reinforcementExample: null,
       },
     ],
     warnings: [],
+    shortcut: {
+      takeawayHu: "A non vedere l'ora fordulat oldja fel a mondat központi jelentését.",
+      coreChunkIndexes: [0],
+    },
+    annotations: [{
+      id: "core-1",
+      sourceText: "Non vedo l'ora",
+      category: "core",
+      chunkIndex: 0,
+      titleHu: "Kulcskifejezés",
+      explanationHu: "Ezt a fordulatot egyben érdemes megjegyezni.",
+    }],
   });
 }
 
@@ -72,6 +97,57 @@ describe("learning analysis domain validation", () => {
     const result = validateLearningAnalysis(source, candidate);
     expect(result.success).toBe(false);
     if (!result.success) expect(result.issues.join(" ")).toContain("exact occurrence");
+  });
+
+  it("rejects invented annotations and invalid Shortcut references", () => {
+    const invented = readyAnalysis();
+    if (invented.schemaVersion !== LEARNING_ANALYSIS_SCHEMA_VERSION) throw new Error("Expected v2 fixture");
+    invented.annotations[0]!.sourceText = "testo inventato";
+    expect(validateLearningAnalysis(source, invented).success).toBe(false);
+
+    const invalidShortcut = readyAnalysis();
+    if (invalidShortcut.schemaVersion !== LEARNING_ANALYSIS_SCHEMA_VERSION) throw new Error("Expected v2 fixture");
+    invalidShortcut.shortcut!.coreChunkIndexes = [4];
+    expect(validateLearningAnalysis(source, invalidShortcut).success).toBe(false);
+  });
+
+  it("keeps persisted analysis v1 readable beside strict v2 results", () => {
+    const current = readyAnalysis();
+    if (current.schemaVersion !== LEARNING_ANALYSIS_SCHEMA_VERSION) throw new Error("Expected v2 fixture");
+    const v1 = {
+      schemaVersion: LEARNING_ANALYSIS_V1_SCHEMA_VERSION,
+      analysisStatus: current.analysisStatus,
+      sourceLanguage: current.sourceLanguage,
+      explanationLanguage: current.explanationLanguage,
+      languageAssessment: current.languageAssessment,
+      meaning: current.meaning,
+      chunks: current.chunks.map((chunk) => ({
+        sourceText: chunk.sourceText,
+        meaningHu: chunk.meaningHu,
+        kind: chunk.kind,
+        baseForm: chunk.baseForm,
+        register: chunk.register,
+        contextNoteHu: chunk.contextNoteHu,
+      })),
+      grammar: current.grammar.map((note) => ({
+        titleHu: note.titleHu,
+        explanationHu: note.explanationHu,
+      })),
+      pronunciation: current.pronunciation,
+      transfer: current.transfer,
+      recall: current.recall.map((item) => ({
+        id: item.id,
+        type: item.type,
+        promptHu: item.promptHu,
+        options: item.options,
+        correctOptionId: item.correctOptionId,
+        correctText: item.correctText,
+        explanationHu: item.explanationHu,
+      })),
+      warnings: current.warnings,
+    };
+    expect(learningAnalysisSchema.safeParse(v1).success).toBe(true);
+    expect(learningAnalysisSchema.safeParse(current).success).toBe(true);
   });
 
   it.each([
@@ -115,6 +191,8 @@ describe("learning analysis domain validation", () => {
       pronunciation: null,
       transfer: [],
       recall: [],
+      shortcut: null,
+      annotations: [],
     });
     expect(validateLearningAnalysis(source, candidate).success).toBe(true);
   });

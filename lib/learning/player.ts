@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { LearningAnalysis } from "@/lib/analysis/schema";
+import { isLearningAnalysisV2, type LearningAnalysis } from "@/lib/analysis/schema";
 
 export const lessonStageSchema = z.enum([
   "meaning",
@@ -77,8 +77,11 @@ export type ProgressMutation = z.infer<typeof progressMutationSchema>;
 export type PhraseSaveReference = z.infer<typeof phraseSaveReferenceSchema>;
 
 export function sayPracticeTarget(analysis: LearningAnalysis) {
-  const chunk = analysis.chunks[0];
-  return chunk ? { text: chunk.sourceText, chunkIndex: 0 } : null;
+  const chunkIndex = isLearningAnalysisV2(analysis)
+    ? analysis.shortcut?.coreChunkIndexes[0] ?? 0
+    : 0;
+  const chunk = analysis.chunks[chunkIndex];
+  return chunk ? { text: chunk.sourceText, chunkIndex } : null;
 }
 
 export function sayPracticeText(analysis: LearningAnalysis) {

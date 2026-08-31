@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { LearningAnalysis } from "@/lib/analysis/schema";
+import type { LearningAnalysisV1 } from "@/lib/analysis/schema";
 import {
   calculateRecallScore,
   gradeRecallAnswer,
@@ -12,7 +12,7 @@ import {
   stagePercent,
 } from "./player";
 
-function analysis(overrides: Partial<LearningAnalysis> = {}): LearningAnalysis {
+function analysis(overrides: Partial<LearningAnalysisV1> = {}): LearningAnalysisV1 {
   return {
     schemaVersion: "learning-analysis-v1",
     analysisStatus: "ready",

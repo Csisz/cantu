@@ -1213,6 +1213,339 @@
   }
 }
 
+/* Milestone 8: source-first guidance, annotations, and purposeful coach states. */
+.robotCoach {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  width: fit-content;
+  max-width: 100%;
+  margin-bottom: 22px;
+  padding: 10px 16px 10px 9px;
+  border: 1px solid color-mix(in srgb, var(--purple) 24%, var(--line));
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--purple) 6%, var(--glass-strong));
+  animation: coachArrive 260ms ease-out;
+}
+
+.robotCoachImage {
+  position: relative;
+  width: 66px;
+  height: 66px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--purple) 15%, transparent), color-mix(in srgb, var(--cyan) 15%, transparent));
+}
+
+.robotCoachImage img {
+  object-fit: contain;
+}
+
+.robotCoach p {
+  max-width: 34ch;
+  color: var(--ink);
+  font: 720 0.9rem/1.5 var(--font-display), sans-serif;
+}
+
+@keyframes coachArrive {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: none; }
+}
+
+.annotatedSourceLead,
+.sourceUnavailableCard > p,
+.shortcutPromise {
+  margin-top: 14px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.annotatedSourceText {
+  margin-top: 26px;
+  padding: clamp(22px, 5vw, 34px);
+  border: 1px solid color-mix(in srgb, var(--cyan) 32%, var(--line));
+  border-radius: 24px;
+  background: linear-gradient(140deg, color-mix(in srgb, var(--surface) 88%, transparent), color-mix(in srgb, var(--cyan) 6%, transparent));
+  color: var(--ink);
+  font: 650 clamp(1.15rem, 3vw, 1.55rem)/1.9 var(--font-display), sans-serif;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.sourceHighlight {
+  position: relative;
+  display: inline;
+  margin: 0 0.08em;
+  padding: 0.15em 0.12em 0.12em;
+  border: 0;
+  border-bottom: 3px solid var(--cyan);
+  border-radius: 6px 6px 3px 3px;
+  color: inherit;
+  background: color-mix(in srgb, var(--cyan) 15%, transparent);
+  cursor: pointer;
+  font: inherit;
+  text-align: inherit;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+
+.sourceHighlight[data-category="core"] {
+  border-bottom-color: var(--purple);
+  background: color-mix(in srgb, var(--purple) 16%, transparent);
+}
+
+.sourceHighlight:hover,
+.sourceHighlight[aria-expanded="true"] {
+  background: color-mix(in srgb, var(--cyan) 25%, transparent);
+}
+
+.sourceHighlight:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--purple) 55%, transparent);
+  outline-offset: 3px;
+}
+
+.sourceHighlight small {
+  display: inline-block;
+  margin-left: 0.45em;
+  padding: 0.15em 0.42em;
+  border-radius: 999px;
+  color: var(--purple);
+  background: var(--glass-strong);
+  font: 800 0.48em/1.4 var(--font-display), sans-serif;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+  white-space: nowrap;
+}
+
+.sourceInsight {
+  margin-top: 16px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--purple) 38%, var(--line));
+  border-radius: 22px;
+  background: var(--glass-strong);
+  box-shadow: 0 24px 52px -42px rgba(27, 33, 64, 0.68);
+}
+
+.sourceInsight:focus {
+  outline: 3px solid color-mix(in srgb, var(--purple) 30%, transparent);
+  outline-offset: 3px;
+}
+
+.insightHeading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.insightHeading span,
+.insightMeaning > span,
+.insightExample > span,
+.grammarExample > span,
+.reinforcementExample > span {
+  display: block;
+  color: var(--purple);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.insightHeading h3 {
+  margin-top: 4px;
+  font-size: 1.35rem;
+}
+
+.insightHeading > button {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+  font-size: 1.35rem;
+}
+
+.sourceInsight > p,
+.insightMeaning p,
+.insightExample p,
+.grammarExample p,
+.reinforcementExample p,
+.chunkWhyUseful p {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  line-height: 1.55;
+}
+
+.insightMeaning,
+.insightExample,
+.grammarExample,
+.reinforcementExample,
+.chunkWhyUseful {
+  display: grid;
+  gap: 5px;
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--purple) 6%, transparent);
+}
+
+.insightMeaning > strong,
+.insightExample > strong,
+.grammarExample > strong,
+.reinforcementExample > strong {
+  font-size: 1.06rem;
+}
+
+.insightActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.insightActions > p {
+  width: 100%;
+  min-height: 18px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+}
+
+.insightShadowButton {
+  min-height: 44px;
+  margin-top: 20px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 999px;
+  color: var(--white);
+  background: var(--purple);
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.insightShadowing {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.shortcutCard {
+  background: linear-gradient(145deg, var(--glass-strong), color-mix(in srgb, var(--purple) 8%, var(--glass-strong)));
+}
+
+.shortcutTakeaway {
+  margin-top: 20px;
+  padding: 20px;
+  border-left: 4px solid var(--purple);
+  border-radius: 0 18px 18px 0;
+  background: color-mix(in srgb, var(--purple) 8%, transparent);
+  font: 720 1.08rem/1.55 var(--font-display), sans-serif;
+}
+
+.shortcutChunks {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+  list-style: none;
+  counter-reset: shortcut;
+}
+
+.shortcutChunks li {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 5px 12px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--glass-strong);
+  counter-increment: shortcut;
+}
+
+.shortcutChunks li::before {
+  content: counter(shortcut);
+  grid-row: 1 / 4;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: var(--white);
+  background: var(--purple);
+  font-weight: 800;
+}
+
+.shortcutChunks span,
+.shortcutChunks p {
+  color: var(--ink-soft);
+  line-height: 1.45;
+}
+
+.shortcutChunks p {
+  font-size: 0.78rem;
+}
+
+.microSuccess {
+  width: fit-content;
+  margin-bottom: 12px;
+  padding: 7px 11px;
+  border-radius: 999px;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 10%, transparent);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.recallFeedback .robotCoach {
+  margin-bottom: 12px;
+}
+
+.recallExplanation {
+  padding-top: 10px;
+  border-top: 1px solid var(--line);
+}
+
+@media (max-width: 680px) {
+  .robotCoach {
+    grid-template-columns: 58px minmax(0, 1fr);
+    padding: 8px 12px 8px 7px;
+  }
+
+  .robotCoachImage {
+    width: 52px;
+    height: 52px;
+  }
+
+  .annotatedSourceText {
+    padding: 18px;
+    font-size: 1.05rem;
+    line-height: 2;
+  }
+
+  .sourceHighlight small {
+    font-size: 0.44em;
+  }
+
+  .insightActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .insightActions button {
+    width: 100%;
+    margin-top: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .robotCoach,
+  .lessonStage {
+    animation: none;
+  }
+}
+
 /* Milestone 6: calm, progressive learning player. */
 .learningPlayer {
   width: min(760px, 100%);
