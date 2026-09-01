@@ -536,3 +536,124 @@ test("instruction-like source remains data and cannot enable retrieval or change
   await expect(page.getByText("HACKED")).toHaveCount(0);
   await expect(page.getByText(/következő sor/i)).toHaveCount(0);
 });
+
+test("saved phrase becomes a due private review, persists a good result and deletes with its memory", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("tab", { name: "Szöveg" }).click();
+  await page.getByLabel("Olasz szöveg").fill("Non vedo l'ora di partire domani.");
+  await page.getByRole("button", { name: "Ezt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await page.getByRole("button", { name: "Értsük meg" }).click();
+  await enterMeaning(page, { saveHighlight: true });
+
+  await page.goto("/app#phrasebook-title");
+  await expect(page.getByRole("heading", { name: "Mentett kifejezéseim" })).toBeVisible();
+  await expect(page.getByText("Non vedo l'ora", { exact: true })).toBeVisible();
+  await expect(page.getByText("Új", { exact: true })).toBeVisible();
+  await expect(page.getByRole("link", { name: /1 kifejezés vár rád/i })).toHaveAttribute("href", "/app/review");
+  await page.goto("/app/review");
+
+  await expect(page.getByRole("heading", { name: "1 kifejezés vár rád." })).toBeVisible();
+  await page.getByRole("button", { name: "Kezdem" }).click();
+  await expect(page.getByText("Non vedo l'ora", { exact: true })).toHaveCount(0);
+  await page.getByLabel("Írd le olaszul").fill("  NON VEDO L’ORA  ");
+  await page.getByRole("button", { name: "Ellenőrzöm" }).click();
+  await expect(page.getByText("Pontosan.")).toBeVisible();
+  await page.getByRole("button", { name: "Ment" }).click();
+  await expect(page.getByRole("heading", { name: "Mai ismétlés kész" })).toBeVisible();
+  await expect(page.getByText("1 / 1")).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByRole("heading", { name: "Mára kész vagy." })).toBeVisible();
+  await page.goto("/app#phrasebook-title");
+  await expect(page.getByText("Gyakorlom", { exact: true })).toBeVisible();
+  const phraseRow = page.locator("li").filter({ hasText: "Non vedo l'ora" }).first();
+  await phraseRow.getByRole("button", { name: "Törlés" }).click();
+  await phraseRow.getByRole("button", { name: "Igen, törlöm" }).click();
+  await expect(page.getByText("Non vedo l'ora", { exact: true })).toHaveCount(0);
+  await expectNoHorizontalOverflow(page);
+  expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
+});
+
+test("incorrect review gives grounded correction and schedules the phrase earlier without AI", async ({ page }) => {
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("tab", { name: "Szöveg" }).click();
+  await page.getByLabel("Olasz szöveg").fill("Possiamo parlarne domani mattina?");
+  await page.getByRole("button", { name: "Ezt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await page.getByRole("button", { name: "Értsük meg" }).click();
+  await enterMeaning(page, { saveHighlight: true });
+  await page.goto("/app/review");
+  await page.getByRole("button", { name: "Kezdem" }).click();
+  await page.getByLabel("Írd le olaszul").fill("Dove andiamo?");
+  const reviewRequests: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/learning/review")) reviewRequests.push(request.postData() ?? "");
+  });
+  await page.getByRole("button", { name: "Ellenőrzöm" }).click();
+  await expect(page.getByText("Nézzük meg.")).toBeVisible();
+  await expect(page.getByText(/A helyes válasz:/)).toBeVisible();
+  await expect(page.getByText(/hamarabb visszatér/i)).toBeVisible();
+  await page.getByRole("button", { name: "Befejezem" }).click();
+  await expect(page.getByRole("heading", { name: "Mai ismétlés kész" })).toBeVisible();
+  expect(reviewRequests).toHaveLength(1);
+  expect(reviewRequests[0]).not.toContain("nextReviewAt");
+  expect(reviewRequests[0]).not.toContain("userId");
+  expect(reviewRequests[0]).not.toContain("sourceText");
+  expect(reviewRequests[0]).not.toContain("audio");
+  await page.goto("/app#phrasebook-title");
+  await expect(page.getByText("Gyakorlom", { exact: true })).toBeVisible();
+  await expectNoHorizontalOverflow(page);
+});
+
+test("saved language powers a bounded private Real-Life Practice Lab", async ({ page }) => {
+  const runtime = watchRuntime(page);
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("tab", { name: "Szöveg" }).click();
+  await page.getByLabel("Olasz szöveg").fill("Non vedo l'ora di partire domani mattina.");
+  await page.getByRole("button", { name: "Ezt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await page.getByRole("button", { name: "Értsük meg" }).click();
+  await enterMeaning(page, { saveHighlight: true });
+
+  const requestBodies: string[] = [];
+  page.on("request", (request) => {
+    if (request.url().endsWith("/api/practice")) requestBodies.push(request.postData() ?? "");
+  });
+  await page.goto("/app/practice");
+  await expect(page.getByRole("heading", { name: "Használd azt, amit már megtanultál." })).toBeVisible();
+  await expect(page.getByText("Non vedo l'ora", { exact: true })).toBeVisible();
+  await expect(page.locator('video[src="/robot/coach-welcome.mp4"]')).toBeVisible();
+  await page.getByRole("button", { name: /Kávézó \/ étterem/i }).click();
+  await page.getByRole("button", { name: "Kezdem a gyakorlást" }).click();
+  await expect(page.getByText("Cosa desidera ordinare?")).toBeVisible();
+  await page.getByRole("button", { name: "Segíts egy kicsit" }).click();
+  await expect(page.getByText("Használhatod ezt")).toBeVisible();
+
+  await page.getByLabel("A válaszod olaszul").fill("Non vedo l'ora di mangiare.");
+  await page.getByRole("button", { name: "Elküldöm" }).click();
+  await expect(page.getByText("Jól használtad.")).toBeVisible();
+  await page.getByRole("button", { name: "Jöhet a következő" }).click();
+
+  await page.getByLabel("A válaszod olaszul").fill("Io andare alla stazione.");
+  await page.getByRole("button", { name: "Elküldöm" }).click();
+  await expect(page.getByText("Ezt finomítsuk.")).toBeVisible();
+  await expect(page.getByText("Io vado alla stazione.")).toBeVisible();
+  await page.getByRole("button", { name: "Jöhet a következő" }).click();
+
+  await page.getByLabel("A válaszod olaszul").fill("Non vedo l'ora di partire.");
+  await page.getByRole("button", { name: "Elküldöm" }).click();
+  await page.getByRole("button", { name: "Lezárom a szituációt" }).click();
+  await expect(page.getByRole("heading", { name: "Szituáció kész" })).toBeVisible();
+  await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
+  expect(requestBodies).toHaveLength(4);
+  for (const body of requestBodies) {
+    expect(body).not.toContain("userId");
+    expect(body).not.toContain("sourceText");
+    expect(body).not.toContain("nextReviewAt");
+    expect(body).not.toContain("Non vedo l'ora di partire domani mattina.");
+  }
+  await expectNoHorizontalOverflow(page);
+  expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
+});

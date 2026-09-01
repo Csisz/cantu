@@ -4,6 +4,8 @@ import { randomUUID } from "node:crypto";
 import type { LearningHistoryItem, LearningSessionMetadata } from "@/lib/domain/learning-session";
 import type { LearningProgressMutation } from "@/lib/domain/learning-progress";
 import { normalizePhraseIdentity } from "@/lib/learning/player";
+import { REVIEW_SCHEDULE_CONFIG, scheduleReview } from "@/lib/review/scheduler";
+import type { PhraseReviewState, ReviewRating } from "@/lib/review/types";
 
 type E2ERow = LearningHistoryItem & { userId: string; sourceFingerprint?: string };
 
@@ -23,7 +25,10 @@ type E2EPhrase = {
   note_hu: string | null;
   register: string | null;
   source_session_id: string | null;
+  created_at: string;
 };
+
+type E2EReview = PhraseReviewState & { userId: string };
 
 const storeKey = "__cantuE2ELearningSessions" as const;
 const globalStore = globalThis as typeof globalThis & { [storeKey]?: E2ERow[] };
@@ -33,6 +38,8 @@ const globalResultStore = globalThis as typeof globalThis & {
 };
 const phraseStoreKey = "__cantuE2EPhrasebook" as const;
 const globalPhraseStore = globalThis as typeof globalThis & { [phraseStoreKey]?: E2EPhrase[] };
+const reviewStoreKey = "__cantuE2EPhraseReview" as const;
+const globalReviewStore = globalThis as typeof globalThis & { [reviewStoreKey]?: E2EReview[] };
 
 function rows() {
   globalStore[storeKey] ??= [];
@@ -47,6 +54,11 @@ function results() {
 function phrases() {
   globalPhraseStore[phraseStoreKey] ??= [];
   return globalPhraseStore[phraseStoreKey];
+}
+
+function reviews() {
+  globalReviewStore[reviewStoreKey] ??= [];
+  return globalReviewStore[reviewStoreKey];
 }
 
 export function listE2ELearningSessions(userId: string) {
@@ -95,6 +107,7 @@ export function clearE2ELearningSessions(userId: string) {
   globalStore[storeKey] = rows().filter((row) => row.userId !== userId);
   globalResultStore[resultStoreKey] = results().filter((row) => row.userId !== userId);
   globalPhraseStore[phraseStoreKey] = phrases().filter((row) => row.userId !== userId);
+  globalReviewStore[reviewStoreKey] = reviews().filter((row) => row.userId !== userId);
 }
 
 export function startE2ETranscriptionSession(
@@ -229,7 +242,7 @@ export function saveE2EProgress(userId: string, input: LearningProgressMutation)
 
 export function saveE2EPhrase(
   userId: string,
-  input: Omit<E2EPhrase, "id" | "userId">,
+  input: Omit<E2EPhrase, "id" | "userId" | "created_at">,
 ) {
   const ownedSession = rows().some((row) => row.userId === userId && row.id === input.source_session_id);
   if (!ownedSession) return { duplicate: false, saved: false };
@@ -238,6 +251,68 @@ export function saveE2EPhrase(
     && phrase.source_session_id === input.source_session_id
     && normalizePhraseIdentity(phrase.italian_chunk) === normalizePhraseIdentity(input.italian_chunk),
   );
-  if (!duplicate) phrases().push({ id: randomUUID(), userId, ...input });
+  if (!duplicate) {
+    const id = randomUUID();
+    const timestamp = new Date().toISOString();
+    phrases().push({ id, userId, ...input, created_at: timestamp });
+    // The deterministic browser test store exposes a due item immediately so
+    // Playwright can exercise the due queue without wall-clock manipulation.
+    reviews().push({
+      userId,
+      phraseId: id,
+      state: "new",
+      nextReviewAt: timestamp,
+      lastReviewedAt: null,
+      reviewCount: 0,
+      successCount: 0,
+      lapseCount: 0,
+      intervalDays: 1,
+      difficulty: REVIEW_SCHEDULE_CONFIG.initialDifficulty,
+      lastRating: null,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    });
+  }
   return { duplicate, saved: true };
+}
+
+export function listE2EPhrases(userId: string) {
+  return phrases()
+    .filter((phrase) => phrase.userId === userId)
+    .map((phrase) => ({
+      phrase,
+      review: reviews().find((review) => review.userId === userId && review.phraseId === phrase.id) ?? null,
+    }));
+}
+
+export function updateE2EReview(
+  userId: string,
+  phraseId: string,
+  rating: ReviewRating,
+  now: Date,
+) {
+  const review = reviews().find((item) => item.userId === userId && item.phraseId === phraseId);
+  if (!review) return null;
+  const update = scheduleReview(review, rating, now);
+  Object.assign(review, update, { updatedAt: now.toISOString() });
+  return review;
+}
+
+export function bringE2EReviewForward(userId: string, phraseId: string, nextReviewAt: Date) {
+  const review = reviews().find((item) => item.userId === userId && item.phraseId === phraseId);
+  if (!review) return false;
+  if (new Date(review.nextReviewAt).getTime() > nextReviewAt.getTime()) {
+    review.nextReviewAt = nextReviewAt.toISOString();
+    if (review.state === "stable") review.state = "review";
+    review.updatedAt = new Date().toISOString();
+  }
+  return true;
+}
+
+export function deleteE2EPhrase(userId: string, phraseId: string) {
+  const index = phrases().findIndex((phrase) => phrase.userId === userId && phrase.id === phraseId);
+  if (index < 0) return false;
+  phrases().splice(index, 1);
+  globalReviewStore[reviewStoreKey] = reviews().filter((review) => review.phraseId !== phraseId);
+  return true;
 }

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import type { AuthContext } from "@/lib/auth/types";
 import type { LearningHistorySnapshot } from "@/lib/data/learning-sessions";
+import type { PhrasebookSnapshot } from "@/lib/review/types";
 import type { InputMode } from "@/lib/input/types";
 import { AccountSection } from "./AccountSection";
 import { InputStudio } from "./InputStudio";
@@ -11,10 +12,11 @@ type AppShellProps = {
   initialMode: InputMode;
   auth: AuthContext;
   history: LearningHistorySnapshot;
+  phrasebook: PhrasebookSnapshot;
   authNotice?: string;
 };
 
-export function AppShell({ initialMode, auth, history, authNotice }: AppShellProps) {
+export function AppShell({ initialMode, auth, history, phrasebook, authNotice }: AppShellProps) {
   return (
     <main className={styles.appPage}>
       <header className={styles.appHeader}>
@@ -45,7 +47,7 @@ export function AppShell({ initialMode, auth, history, authNotice }: AppShellPro
           initialMode={initialMode}
           authenticated={auth.status === "authenticated"}
         />
-        <AccountSection auth={auth} history={history} notice={authNotice} />
+        <AccountSection auth={auth} history={history} phrasebook={phrasebook} notice={authNotice} />
       </section>
       <footer className={styles.appFooter}>
         <span><i aria-hidden="true" /> Helyi Input Studio · privát forráskezelés</span>

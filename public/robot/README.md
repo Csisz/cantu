@@ -2,7 +2,7 @@
 
 The learning UI resolves robot visuals through `lib/learning/robot-coach.ts`; lesson cards never hardcode state-specific paths.
 
-Future production motion assets may use these slots:
+Production motion assets use these slots:
 
 - `coach-welcome.*`
 - `coach-source.*`
@@ -14,4 +14,23 @@ Future production motion assets may use these slots:
 - `coach-success.*`
 - `coach-completion.*`
 
-Until an approved asset exists, every state deliberately falls back to the existing `/robot.png`. Animated assets must respect reduced motion and must not loop distractingly while the learner reads.
+`RobotCoach` loads these files lazily through the centralized mapping. A missing/broken video and `prefers-reduced-motion` both fall back to `/robot.png`; success and completion clips do not loop.
+
+## Build-time Higgsfield workflow
+
+Higgsfield Cloud is an optional development-time asset generator, not a Cantu runtime dependency. Keys stay in local environment variables and are never shipped to learners.
+
+Preview all coach jobs without API traffic or credit use:
+
+```powershell
+python generate_assets_v2.py --coach --dry-run
+```
+
+Preview or generate selected states:
+
+```powershell
+python generate_assets_v2.py --coach --only welcome,challenge,success --dry-run
+python generate_assets_v2.py --coach --only welcome,challenge,success
+```
+
+Real generation requires local `HF_API_KEY_ID` and `HF_API_KEY_SECRET`. Never commit their values. Generated MP4 files are static web assets; the application never calls Higgsfield when a learner opens Cantu.

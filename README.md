@@ -22,9 +22,12 @@ Fő útvonalak:
 
 - `/` — marketingoldal;
 - `/app` — Input Studio, autentikáció és a „Saját tanulásaim”;
+- `/app/review` — privát, legfeljebb tíz elemes „Mai ismétlés”;
+- `/app/practice` — privát, 3–5 válaszos Real-Life Practice Lab a mentett kifejezésekből;
 - `/api/transcribe` — hitelesített, kizárólag átmeneti rövidklip-feldolgozás;
 - `/api/analyze` — hitelesített, ellenőrzött szöveg → validált tanulási objektum;
 - `/api/pronunciation` — hitelesített, átmeneti gyakorlófelvétel → átlátható szófelismerési összehasonlítás;
+- `/api/practice` — hitelesített, strukturált és körszámban korlátozott helyzetgyakorlás;
 - `/auth/confirm` — Supabase e-mail-megerősítés.
 
 Supabase-konfiguráció nélkül a landing és a helyi Input Studio használható, de a valós STT, a strukturált nyelvi elemzés és a mentés hitelesített fiókot igényel.
@@ -136,6 +139,58 @@ Innen tanulunk (átmeneti teljes forrás + pontos kiemelések)
 
 Az M8 egyetlen strukturált nyelvi elemzőhívást használ forrásonként: az annotáció, Shortcut, robot-copy, hibatámogatás és kártyák nem indítanak külön providerhívást.
 
+## Milestone 9 — tanulási memória és adaptív ismétlés
+
+Az explicit módon mentett, privát származtatott kifejezésekhez a Cantu külön review-állapotot tart fenn. A phrasebook továbbra is csak az olasz chunkot, magyar jelentést és rövid, származtatott tanulási jegyzetet őrzi; a `user_phrase_review` kizárólag az ütemezéshez szükséges állapotot és számlálókat tartalmazza.
+
+```text
+mentett kifejezés
+→ aktív felidézés
+→ determinisztikus értékelés
+→ Nehéz volt / Ment / Könnyű volt
+→ következő UTC időpont
+```
+
+- Az első rendes ismétlés a mentés után 24 órára kerül. A régebbi, M9 előtti phrasebook-elemek a migráció után biztonságosan ismételhetővé válnak.
+- A kis, SM-2 ihletésű scheduler az `again/hard/good/easy` kimenetekből 1–365 nap közötti intervallumot számol. Ez átlátható termékheurisztika, nem tudományosan optimális memóriaígéret.
+- Hibás válasz automatikusan `again`; helyes válasz után a tanuló jelzi, mennyire volt nehéz. A szerver újra betölti a saját phrasebook-elemet, újraértékeli a választ, és maga számolja a következő dátumot. A böngésző nem írhat tetszőleges `next_review_at` értéket.
+- A queue előre veszi a legrégebben esedékes és a többször elrontott kifejezéseket, de egy alkalom legfeljebb tíz elemes, így rövid marad.
+- Az olasz→magyar, magyar→olasz és hiánykitöltős feladatok a már mentett mezőkből készülnek. Megnyitás, válasz, értékelés és újraütemezés közben nincs OpenAI- vagy más providerhívás.
+- A „Mentett kifejezéseim” megmutatja az egyszerű `Új / Gyakorlom / Megy / Stabil` állapotot, az esedékességet, kézi gyakorlást és törlést. A kézi gyakorlás nem tolja el agresszíven a rendes ütemezést.
+- Duplikált mentés nem hoz létre új review-sort és nem nullázza a történetet. A phrasebook-elem törlése kaszkádosan törli a review-állapotot; a forrás-session törlése után a származtatott kifejezés és review folytatható.
+
+Az ismétlés nem tárol teljes forrást, transcriptet, hangot, waveformot, promptot vagy raw provider-választ. Nem rekonstruál eredeti művet a mentett chunkokból, és nem használ globális vagy nyilvános kifejezéstárat.
+
+## Milestone 10 — Real-Life Practice Lab és animált Robot Coach
+
+A privát `/app/practice` rövid, célhoz kötött hétköznapi helyzetekben aktiválja a tanuló saját mentett nyelvét:
+
+```text
+mentett / gyenge kifejezés
+→ helyzet és cél
+→ tanulói olasz válasz
+→ kontextuális, magyar javítás
+→ legfeljebb öt válasz
+→ kompakt lezárás
+```
+
+- A nyolc konfigurált helyzet kávézótól és vásárlástól az utazáson, útbaigazításon és üzenetváltáson át munkáig/iskoláig terjed. Egy gyakorlás normálisan 3–5 tanulói válasz, nem végtelen chatbot.
+- A célkifejezést a szerver determinisztikusan a saját phrasebookból választja: a recent lapse/gyenge elemeket az új, majd stabil elemek előtt hozza. A böngésző nem adhat tetszőleges `user_id`-t vagy kanonikus célszöveget.
+- A `ConversationPracticeProvider` első adaptere a Responses API-t, strict Structured Outputs sémát, `store: false` beállítást és üres tools listát használ. Az alapmodell `gpt-5.6-terra`, low reasoninggel. A tanulói szöveg elkülönített, nem megbízható adat; maximum egy célzott sémajavító retry engedett.
+- A visszajelzés megkülönbözteti a természetes, az érthető és a valóban javítandó választ. Érthető mondatot nem ír át pusztán stíluspreferencia miatt; hibánál rövid magyar magyarázatot és természetes olasz változatot ad.
+- A segítség a már mentett chunkból készül, providerhívás nélkül. Egy elküldés pontosan egy normál providerhívás. Kliensoldali dupla küldés tiltott, a szerver aláírt, 30 percig élő, forrásszöveget nem tartalmazó állapottal védi a körszámot és a targeteket.
+- A tanulói válasz és a teljes beszélgetés nem kerül adatbázisba vagy logba. A gyakorlat csak rövid életű böngésző-/kérésállapot; legfeljebb egy ismétlési dátumot hoz előrébb szerveroldalon, ha ugyanazzal a mentett kifejezéssel ismételten gond van.
+- A szerepjáték teljes értékűen szöveges. M10 nem ad TTS-t, külön hangos szerepjáték-archívumot vagy új STT-rendszert.
+
+A `RobotCoach` a központi assetmappingből használja a `public/robot/coach-*.mp4` fájlokat. A videók némák, inline játszanak, a siker/lezárás nem loopol, csökkentett mozgás vagy médiahiba esetén `/robot.png` a fallback. A Higgsfield csak fejlesztési, build-time generátor: nem fut felhasználói kéréskor és kulcsai nem részei a Cantu runtime-nak. Biztonságos előnézet:
+
+```powershell
+python generate_assets_v2.py --coach --dry-run
+python generate_assets_v2.py --coach --only welcome,challenge,success --dry-run
+```
+
+Valós generálás helyi `HF_API_KEY_ID` / `HF_API_KEY_SECRET` változókat igényel és kreditet használ; ezek értékét tilos commitolni.
+
 ## Adatvédelem és perzisztencia
 
 - nincs Supabase Storage, audio bucket, fájlrendszeres mentés vagy nyilvános audio URL;
@@ -170,9 +225,11 @@ OPENAI_API_KEY=
 SPEECH_TO_TEXT_PROVIDER=openai
 LANGUAGE_ANALYSIS_PROVIDER=openai
 LANGUAGE_ANALYSIS_MODEL=gpt-5.6-terra
+CONVERSATION_PRACTICE_PROVIDER=openai
+CONVERSATION_PRACTICE_MODEL=gpt-5.6-terra
 ```
 
-Az `OPENAI_API_KEY` és a `SUPABASE_SECRET_KEY` kizárólag szerveroldali változó; soha ne kapjanak `NEXT_PUBLIC_` prefixet. A Supabase secret csak az ellenőrzött eredményíró RPC-khez kell, a kliensben nem szerepel. Ugyanaz az OpenAI-kulcs szolgálja ki az STT- és elemzőadaptert; nincs második providersecret.
+Az `OPENAI_API_KEY` és a `SUPABASE_SECRET_KEY` kizárólag szerveroldali változó; soha ne kapjanak `NEXT_PUBLIC_` prefixet. A Supabase secret csak az ellenőrzött eredményíró RPC-khez és az aláírt gyakorlóállapothoz kell, a kliensben nem szerepel. Ugyanaz az OpenAI-kulcs szolgálja ki az STT-, elemző- és gyakorlóadaptert; nincs második providersecret.
 
 ## Helyi Supabase
 
@@ -198,7 +255,7 @@ npm run test:e2e
 npm run build
 ```
 
-A unit/component/E2E tesztek determinisztikus `SpeechToTextProvider`, `LanguageAnalysisProvider` és `PronunciationFeedbackProvider` implementációt, valamint generált hangot használnak, ezért nem költenek OpenAI-kreditet. A Playwright mockok csak nem-production környezetben, `CANTU_E2E_STT_MOCK=1` és `CANTU_E2E_ANALYSIS_MOCK=1` mellett aktiválhatók. A tesztek külön ellenőrzik a strict sémát, forrásidézet-előfordulást, egyszeri szemantikai retryt, prompt-injekciós elválasztást, toolmentességet, az owned kiejtési célt és az RLS/service-role írási határt.
+A unit/component/E2E tesztek determinisztikus `SpeechToTextProvider`, `LanguageAnalysisProvider`, `PronunciationFeedbackProvider` és `ConversationPracticeProvider` implementációt, valamint generált hangot használnak, ezért nem költenek OpenAI-kreditet. A Playwright mockok csak nem-production környezetben, `CANTU_E2E_STT_MOCK=1`, `CANTU_E2E_ANALYSIS_MOCK=1` és `CANTU_E2E_PRACTICE_MOCK=1` mellett aktiválhatók. A tesztek külön ellenőrzik a strict sémát, forrásidézet-előfordulást, egyszeri szemantikai retryt, prompt-injekciós elválasztást, toolmentességet, owned targeteket és az RLS/service-role írási határt.
 
 Valós elemzési smoke teszthez állíts be saját, ignorált `.env.local` fájlban `OPENAI_API_KEY` értéket, valamint a helyi vagy felhős Supabase publikus és szerver-secret változóit. Egy hitelesített fiókkal elemezz egy saját, rövid olasz mondatot pontosan egyszer. Ne használj dalszöveget, könyv- vagy filmidézetet; kulcsot, nyers provider-választ vagy promptot ne írj logba és ne commitolj.
 
@@ -212,4 +269,4 @@ A script kizárólag biztonságos modell/latencia/token- és strukturális darab
 
 ## Kifejezetten halasztva
 
-Nincs TTS, új fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, spaced repetition vagy adaptív review scheduling (Milestone 9), beszélgetős tutor, további nyelvpár, nyilvános megosztás, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció.
+Nincs TTS, új fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, végtelen általános beszélgetős tutor, további nyelvpár, nyilvános megosztás, social feature, XP/streak/gamifikációs gazdaság, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció. A public-beta deployment/compliance hardening M11-re marad.

@@ -100,6 +100,7 @@ export function LearningPlayer({
     setSaveMessages((current) => ({ ...current, [index]: result.message }));
     if (result.status === "success") {
       setSavedChunks((current) => new Set(current).add(index));
+      window.dispatchEvent(new CustomEvent("cantu:phrase-saved"));
     }
   }
 

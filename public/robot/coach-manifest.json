@@ -1,0 +1,82 @@
+{
+  "challenge": {
+    "src": "/robot/coach-challenge.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/6097ad81-ff58-4900-8aeb-e7e6cd4dfb81.mp4",
+    "request_id": "fd9bbbaa-417a-423e-ae8d-1f033326dcdf",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "retry": {
+    "src": "/robot/coach-retry.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/c07477b7-2ab6-429b-973b-a009ad12564d.mp4",
+    "request_id": "b414db8a-f1e1-45d1-878e-1e61d2c71844",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "success": {
+    "src": "/robot/coach-success.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/51d7fbf9-a931-4698-ae09-57fc2f1ae602.mp4",
+    "request_id": "3d27e006-ae26-4107-8c9f-20703d5195d3",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "welcome": {
+    "src": "/robot/coach-welcome.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/af656a26-5615-4a95-aa71-64f559714fd5.mp4",
+    "request_id": "978cc245-bd3d-4d98-86bc-b454d39d6168",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "source": {
+    "src": "/robot/coach-source.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/d0618006-269a-48ae-8ff1-2882931d2c48.mp4",
+    "request_id": "4c23700d-be3c-425c-a1b9-1b8adc7fc021",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "shortcut": {
+    "src": "/robot/coach-shortcut.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/eab544ee-3653-48ff-8652-9724c86fa19a.mp4",
+    "request_id": "aa2a8ded-f603-42a5-adab-ebc4fbf6f357",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "explain": {
+    "src": "/robot/coach-explain.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/3b85c2d8-e08b-44e5-898e-5cced880cba8.mp4",
+    "request_id": "624c5866-a858-4d81-bb25-ace25790a11b",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "encourage": {
+    "src": "/robot/coach-encourage.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/6e52773c-e46d-43b2-83df-5d36d9fb1b07.mp4",
+    "request_id": "d74fea59-1f01-48d3-8911-b89218899593",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "listen": {
+    "src": "/robot/coach-listen.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/5ae278dd-ac92-462a-abfa-2e59d1be2dcf.mp4",
+    "request_id": "ff973e43-0205-491b-ad83-3285a3ab7772",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  },
+  "completion": {
+    "src": "/robot/coach-completion.mp4",
+    "remote": "https://d3u0tzju9qaucj.cloudfront.net/6765b2cf-1a29-4ae9-81ce-dd3018ef9bcf/1dae4ee0-3dfa-4ea9-b4de-8049d38c06f3.mp4",
+    "request_id": "6258f5a0-a9de-4ebf-a6b4-0710c5b8ace5",
+    "model": "kling-video/v2.1/pro/image-to-video",
+    "duration_seconds": 5,
+    "aspect_ratio": "1:1"
+  }
+}

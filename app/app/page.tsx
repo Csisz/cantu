@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { AppShell } from "@/components/cantu-app/AppShell";
 import { getAuthContext } from "@/lib/data/auth";
 import { getLearningHistory } from "@/lib/data/learning-sessions";
+import { getPhrasebookSnapshot } from "@/lib/data/review";
 import type { InputMode } from "@/lib/input/types";
 
 export const metadata: Metadata = {
@@ -29,13 +30,17 @@ export default async function AppPage({ searchParams }: AppPageProps) {
         ? "A megerősítő link lejárt vagy érvénytelen. Kérj új levelet a regisztrációval."
         : undefined;
   const auth = await getAuthContext();
-  const history = await getLearningHistory(auth);
+  const [history, phrasebook] = await Promise.all([
+    getLearningHistory(auth),
+    getPhrasebookSnapshot(auth),
+  ]);
 
   return (
     <AppShell
       initialMode={initialMode}
       auth={auth}
       history={history}
+      phrasebook={phrasebook}
       authNotice={authNotice}
     />
   );

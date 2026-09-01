@@ -23,6 +23,7 @@ export default defineConfig({
       CANTU_E2E_AUTH_MOCK: "1",
       CANTU_E2E_STT_MOCK: "1",
       CANTU_E2E_ANALYSIS_MOCK: "1",
+      CANTU_E2E_PRACTICE_MOCK: "1",
     },
     reuseExistingServer: !process.env.CI,
     timeout: 120_000,

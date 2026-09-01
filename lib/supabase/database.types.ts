@@ -430,6 +430,62 @@ export type Database = {
         }
         Relationships: []
       }
+      user_phrase_review: {
+        Row: {
+          created_at: string
+          difficulty: number
+          interval_days: number
+          lapse_count: number
+          last_rating: string | null
+          last_reviewed_at: string | null
+          next_review_at: string
+          phrase_id: string
+          review_count: number
+          state: string
+          success_count: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          difficulty?: number
+          interval_days?: number
+          lapse_count?: number
+          last_rating?: string | null
+          last_reviewed_at?: string | null
+          next_review_at?: string
+          phrase_id: string
+          review_count?: number
+          state?: string
+          success_count?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          difficulty?: number
+          interval_days?: number
+          lapse_count?: number
+          last_rating?: string | null
+          last_reviewed_at?: string | null
+          next_review_at?: string
+          phrase_id?: string
+          review_count?: number
+          state?: string
+          success_count?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_phrase_review_phrase_owner_fkey"
+            columns: ["phrase_id", "user_id"]
+            isOneToOne: false
+            referencedRelation: "user_phrasebook"
+            referencedColumns: ["id", "user_id"]
+          },
+        ]
+      }
       user_phrasebook: {
         Row: {
           created_at: string

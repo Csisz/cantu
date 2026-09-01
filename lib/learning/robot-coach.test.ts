@@ -15,9 +15,12 @@ describe("Robot Coach domain mapping", () => {
     expect(robotStateForRecall(true)).toBe("success");
   });
 
-  it("gives every state an approved static fallback without inventing animation files", () => {
+  it("maps every state to the build-time animation contract and static fallback", () => {
     for (const state of robotCoachStates) {
-      expect(ROBOT_COACH_ASSETS[state]).toEqual({ staticSrc: "/robot.png", animatedSrc: null });
+      expect(ROBOT_COACH_ASSETS[state].staticSrc).toBe("/robot.png");
+      expect(ROBOT_COACH_ASSETS[state].animatedSrc).toBe(`/robot/coach-${state}.mp4`);
     }
+    expect(ROBOT_COACH_ASSETS.completion.loop).toBe(false);
+    expect(ROBOT_COACH_ASSETS.listen.loop).toBe(true);
   });
 });

@@ -1,5 +1,6 @@
 import { getAuthContext } from "@/lib/data/auth";
 import { savePhrasebookChunk } from "@/lib/data/learning-experience";
+import { deletePhrasebookItem } from "@/lib/data/review";
 import { phraseSaveReferenceSchema } from "@/lib/learning/player";
 
 export async function POST(request: Request) {
@@ -17,5 +18,19 @@ export async function POST(request: Request) {
     return Response.json(result, { status: result.status === "success" ? 200 : 400 });
   } catch {
     return Response.json({ status: "error", message: "A kifejezést most nem sikerült elmenteni. Próbáld újra." }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const auth = await getAuthContext();
+    if (auth.status !== "authenticated") {
+      return Response.json({ status: "unauthenticated", message: "A törléshez jelentkezz be újra." }, { status: 401 });
+    }
+    const input = await request.json().catch(() => null) as { phraseId?: unknown } | null;
+    const result = await deletePhrasebookItem(auth, input?.phraseId);
+    return Response.json(result, { status: result.status === "success" ? 200 : 400 });
+  } catch {
+    return Response.json({ status: "error", message: "A kifejezést most nem sikerült törölni." }, { status: 500 });
   }
 }

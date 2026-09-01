@@ -7,14 +7,17 @@ import { deleteLearningSessionAction } from "@/app/app/learning-actions";
 import { AuthPanel } from "@/components/auth/AuthPanel";
 import type { AuthContext } from "@/lib/auth/types";
 import type { LearningHistorySnapshot } from "@/lib/data/learning-sessions";
+import type { PhrasebookSnapshot } from "@/lib/review/types";
 import { progressLabel } from "@/lib/domain/learning-progress";
 import type { LearningHistoryItem } from "@/lib/domain/learning-session";
 import { DeleteLearningControl } from "./DeleteLearningControl";
+import { PhrasebookSection } from "./PhrasebookSection";
 import styles from "./app.module.css";
 
 type AccountSectionProps = {
   auth: AuthContext;
   history: LearningHistorySnapshot;
+  phrasebook?: PhrasebookSnapshot;
   notice?: string;
 };
 
@@ -41,7 +44,7 @@ function sessionMetadata(item: LearningHistoryItem) {
   return "Mikrofonos forrás";
 }
 
-export function AccountSection({ auth, history, notice }: AccountSectionProps) {
+export function AccountSection({ auth, history, phrasebook = { status: "ready", items: [], dueCount: 0 }, notice }: AccountSectionProps) {
   const [optimisticItems, setOptimisticItems] = useState<LearningHistoryItem[]>([]);
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const persistedItems = history.status === "ready" ? history.items : [];
@@ -190,6 +193,7 @@ export function AccountSection({ auth, history, notice }: AccountSectionProps) {
           ))}
         </ul>
       ) : null}
+      {auth.status === "authenticated" ? <PhrasebookSection snapshot={phrasebook} /> : null}
     </section>
   );
 }

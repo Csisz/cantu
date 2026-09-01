@@ -18,21 +18,26 @@ export type RobotCoachState = (typeof robotCoachStates)[number];
 export type RobotCoachAsset = {
   staticSrc: string;
   animatedSrc: string | null;
+  loop: boolean;
 };
 
-const fallbackAsset: RobotCoachAsset = { staticSrc: "/robot.png", animatedSrc: null };
+const asset = (state: RobotCoachState, loop: boolean): RobotCoachAsset => ({
+  staticSrc: "/robot.png",
+  animatedSrc: `/robot/coach-${state}.mp4`,
+  loop,
+});
 
 export const ROBOT_COACH_ASSETS: Record<RobotCoachState, RobotCoachAsset> = {
-  welcome: fallbackAsset,
-  source: fallbackAsset,
-  shortcut: fallbackAsset,
-  explain: fallbackAsset,
-  encourage: fallbackAsset,
-  challenge: fallbackAsset,
-  listen: fallbackAsset,
-  retry: fallbackAsset,
-  success: fallbackAsset,
-  completion: fallbackAsset,
+  welcome: asset("welcome", true),
+  source: asset("source", false),
+  shortcut: asset("shortcut", false),
+  explain: asset("explain", false),
+  encourage: asset("encourage", false),
+  challenge: asset("challenge", false),
+  listen: asset("listen", true),
+  retry: asset("retry", false),
+  success: asset("success", false),
+  completion: asset("completion", false),
 };
 
 export const ROBOT_COACH_COPY: Record<RobotCoachState, string> = {

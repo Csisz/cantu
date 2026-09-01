@@ -27,6 +27,21 @@ export function isE2EAnalysisMockEnabled() {
   );
 }
 
+export function isE2EPracticeMockEnabled() {
+  return (
+    process.env.NODE_ENV !== "production" &&
+    process.env.CANTU_E2E_PRACTICE_MOCK === "1"
+  );
+}
+
+export function getPracticeStateSecret() {
+  const configured = getServerSupabaseSecret();
+  if (configured) return configured;
+  return isE2EPracticeMockEnabled()
+    ? "cantu-e2e-practice-state-secret-not-for-production"
+    : null;
+}
+
 export function getServerSupabaseSecret() {
   const value = process.env.SUPABASE_SECRET_KEY?.trim();
   return value && value.length >= 16 ? value : null;
