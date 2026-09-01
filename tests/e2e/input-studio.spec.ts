@@ -248,6 +248,37 @@ test("landing to text confirmation and explicit unauthenticated analysis boundar
   expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
 });
 
+test("public beta policy routes and security headers are available without auth", async ({ page }) => {
+  for (const route of ["/privacy", "/terms", "/acceptable-use"]) {
+    const response = await page.goto(route);
+    expect(response?.status()).toBe(200);
+    expect(response?.headers()["x-content-type-options"]).toBe("nosniff");
+    expect(response?.headers()["x-frame-options"]).toBe("DENY");
+  }
+  await expect(page.getByText("Béta-tervezet.")).toBeVisible();
+  const health = await page.request.get("/api/health");
+  expect(health.ok()).toBe(true);
+  expect(await health.json()).not.toHaveProperty("secret");
+});
+
+test("analysis boundary discloses transient AI-provider text processing", async ({ page }) => {
+  await page.goto("/app?mode=text");
+  await page.getByLabel("Olasz szöveg").fill("Ci vediamo domani mattina?");
+  await page.getByRole("button", { name: "Ezt értsük meg" }).click();
+  await page.getByRole("button", { name: "Rendben, tovább" }).click();
+  await expect(page.getByText(/ellenőrzött szöveget a beállított AI-szolgáltatónak küldjük/i)).toBeVisible();
+});
+
+test("account deletion requires explicit confirmation and clears the disposable session", async ({ page }) => {
+  await signInWithDeterministicAuth(page);
+  await page.getByRole("button", { name: "Cantu-fiók törlése" }).click();
+  await page.getByLabel(/Megerősítésként/).fill("TÖRLÉS");
+  await page.getByRole("button", { name: "Végleg törlöm a fiókom" }).click();
+  await expect(page.getByRole("heading", { name: "A Cantu-adataidat töröltük." })).toBeVisible();
+  await page.goto("/app");
+  await expect(page.getByRole("button", { name: "Bejelentkezés" })).toBeVisible();
+});
+
 test("landing presents the Bring, Verify, Learn story", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("heading", { name: "Hozd azt, amit nem értesz" })).toBeVisible();

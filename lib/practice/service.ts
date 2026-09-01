@@ -2,11 +2,11 @@ import "server-only";
 
 import type { AuthContext } from "@/lib/auth/types";
 import { bringOwnedPhraseReviewForward, loadOwnedPhrases } from "@/lib/data/review";
+import { consumePracticeUsage } from "@/lib/data/usage";
 import type { ConversationPracticeProvider, PracticeProviderOptions } from "@/lib/providers/practice/types";
 import { PracticeError } from "@/lib/providers/practice/types";
 import { getPracticeScenario } from "./scenarios";
 import { applyPracticeOutcome } from "./adaptation";
-import { consumePracticeNonce, consumePracticeRateLimit, releasePracticeNonce } from "./rate-limit";
 import { createPracticeStateToken, readPracticeStateToken } from "./state-token";
 import { selectPracticeTargets } from "./targets";
 import {
@@ -126,7 +126,7 @@ export async function startConversationPractice(
   signal?: AbortSignal,
 ) {
   const user = requireUser(auth);
-  if (!consumePracticeRateLimit(user.id)) throw new PracticeError("rate_limited");
+  if (!(await consumePracticeUsage(user.id))) throw new PracticeError("rate_limited");
   const scenario = getPracticeScenario(scenarioId);
   if (!scenario) throw new PracticeError("invalid_request");
   const targets = selectPracticeTargets(await loadOwnedPhrases(auth));
@@ -163,11 +163,7 @@ export async function respondToConversationPractice(
   const state = readPracticeStateToken(stateToken, secret);
   if (!state || state.userId !== user.id) throw new PracticeError("session_invalid");
   if (state.turnCount >= MAX_PRACTICE_TURNS) throw new PracticeError("turn_limit_reached");
-  if (!consumePracticeNonce(state.nonce)) throw new PracticeError("duplicate_request");
-  if (!consumePracticeRateLimit(user.id)) {
-    releasePracticeNonce(state.nonce);
-    throw new PracticeError("rate_limited");
-  }
+  if (!(await consumePracticeUsage(user.id, state.nonce))) throw new PracticeError("duplicate_request");
 
   try {
     const scenario = getPracticeScenario(state.scenarioId);
@@ -230,7 +226,6 @@ export async function respondToConversationPractice(
       : null;
     return result(scenario, targets, turn, turnNumber, nextToken, reviewBroughtForward);
   } catch (error) {
-    releasePracticeNonce(state.nonce);
     throw error;
   }
 }

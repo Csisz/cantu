@@ -12,6 +12,7 @@ import { progressLabel } from "@/lib/domain/learning-progress";
 import type { LearningHistoryItem } from "@/lib/domain/learning-session";
 import { DeleteLearningControl } from "./DeleteLearningControl";
 import { PhrasebookSection } from "./PhrasebookSection";
+import { AccountPrivacyControls } from "./AccountPrivacyControls";
 import styles from "./app.module.css";
 
 type AccountSectionProps = {
@@ -194,6 +195,7 @@ export function AccountSection({ auth, history, phrasebook = { status: "ready", 
         </ul>
       ) : null}
       {auth.status === "authenticated" ? <PhrasebookSection snapshot={phrasebook} /> : null}
+      {auth.status === "authenticated" ? <AccountPrivacyControls email={auth.user.email} /> : null}
     </section>
   );
 }

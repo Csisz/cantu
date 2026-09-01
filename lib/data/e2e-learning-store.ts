@@ -110,6 +110,23 @@ export function clearE2ELearningSessions(userId: string) {
   globalReviewStore[reviewStoreKey] = reviews().filter((row) => row.userId !== userId);
 }
 
+export function exportE2EAccountData(user: { email: string; displayName: string | null; id: string }) {
+  const withoutUserId = <T extends { userId: string }>(item: T): Omit<T, "userId"> => {
+    const copy = { ...item } as Partial<T>;
+    delete copy.userId;
+    return copy as Omit<T, "userId">;
+  };
+  return {
+    exportedAt: new Date().toISOString(),
+    account: { email: user.email, displayName: user.displayName, profile: null },
+    learningSessions: listE2ELearningSessions(user.id),
+    learningProgress: listE2ELearningSessions(user.id).map((item) => ({ session_id: item.id, ...item.progress })),
+    learningResults: results().filter((item) => item.userId === user.id).map(withoutUserId),
+    savedPhrases: phrases().filter((item) => item.userId === user.id).map(withoutUserId),
+    phraseReview: reviews().filter((item) => item.userId === user.id).map(withoutUserId),
+  };
+}
+
 export function startE2ETranscriptionSession(
   userId: string,
   inputType: "microphone" | "audio_file",

@@ -163,7 +163,7 @@ export function LearningPreview({ source, onStartOver, authenticated }: {
       <span className={styles.stepBadge}>3 / 3 · Ellenőrzött forrás</span>
       <h2 id="analysis-start-title">Készen áll a megértésre.</h2>
       <blockquote className={styles.sourceText} lang="it">{source.text}</blockquote>
-      <p className={styles.previewLead}>Az elemzés csak a gomb megnyomásakor indul. A forrásszöveget nem mentjük el alapértelmezetten.</p>
+      <p className={styles.previewLead}>Az elemzés csak a gomb megnyomásakor indul. Az ellenőrzött szöveget a beállított AI-szolgáltatónak küldjük elemzésre; alapértelmezetten nem mentjük el forrásként.</p>
       <div className={styles.confirmationActions}>
         <button className={styles.mainAction} type="button" onClick={analyze}>Értsük meg</button>
         <button className={styles.secondaryAction} type="button" onClick={onStartOver}>Másik forrást hozok</button>

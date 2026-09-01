@@ -6,6 +6,7 @@ import { AccountSection } from "./AccountSection";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 vi.mock("@/app/app/actions", () => ({ signOutAction: vi.fn() }));
 vi.mock("@/app/app/learning-actions", () => ({ deleteLearningSessionAction: vi.fn() }));
+vi.mock("@/app/app/account-actions", () => ({ deleteAccountAction: vi.fn() }));
 
 const auth: AuthContext = {
   status: "authenticated",

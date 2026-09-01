@@ -191,6 +191,18 @@ python generate_assets_v2.py --coach --only welcome,challenge,success --dry-run
 
 Valós generálás helyi `HF_API_KEY_ID` / `HF_API_KEY_SECRET` változókat igényel és kreditet használ; ezek értékét tilos commitolni.
 
+## Milestone 11 — public beta hardening
+
+A `/privacy`, `/terms` és `/acceptable-use` útvonalak magyar, jogi felülvizsgálatra váró béta-tervezetek. A személyes térből a felhasználó forráskímélő JSON-exportot kérhet, illetve `TÖRLÉS` megerősítéssel végleg törölheti Cantu-fiókját és a hozzá tartozó privát alkalmazásadatokat. A paid/mutating route-ok same-origin, méret-, auth-, timeout- és normalizált hibahatárral működnek; a Practice Lab használati/replay guardja atomikus PostgreSQL-határ.
+
+Telepítés előtt futtasd:
+
+```bash
+npm run readiness:production
+```
+
+A parancs külön `PASS`, `WARN`, `BLOCK` állapotot ad a policy route-okra, production mockokra, Practice signing secretre, kapcsolati adatra és env-alakra. Nem jelent jogi jóváhagyást és nem hív élő szolgáltatót. A részletes retention, provider-, biztonsági és deployment anyag a [`docs/public-beta`](docs/public-beta) mappában van. Production env-ek: browser-safe Supabase URL/publishable key; server-only Supabase secret, OpenAI key és külön `PRACTICE_STATE_SECRET`; a `CANTU_E2E_*` és Higgsfield kulcsok kizárólag fejlesztésiek. Tényleges deployment és M12 billing nincs implementálva.
+
 ## Adatvédelem és perzisztencia
 
 - nincs Supabase Storage, audio bucket, fájlrendszeres mentés vagy nyilvános audio URL;

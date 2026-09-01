@@ -13,6 +13,8 @@ export function Footer() {
         <Link href="/app?mode=listen">Hallgatás</Link>
         <Link href="/app?mode=audio">Hangfájl</Link>
         <Link href="/app?mode=text">Szöveg</Link>
+        <Link href="/privacy">Adatvédelem</Link>
+        <Link href="/terms">Feltételek</Link>
       </nav>
     </footer>
   );

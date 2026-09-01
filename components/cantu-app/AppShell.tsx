@@ -51,7 +51,7 @@ export function AppShell({ initialMode, auth, history, phrasebook, authNotice }:
       </section>
       <footer className={styles.appFooter}>
         <span><i aria-hidden="true" /> Helyi Input Studio · privát forráskezelés</span>
-        <Link href="/">Vissza a bemutatóhoz</Link>
+        <span><Link href="/privacy">Adatvédelem</Link> · <Link href="/terms">Feltételek</Link> · <Link href="/">Bemutató</Link></span>
       </footer>
     </main>
   );

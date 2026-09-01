@@ -1,4 +1,5 @@
 import { getAuthContext } from "@/lib/data/auth";
+import { consumePaidUsage } from "@/lib/data/usage";
 import { getOwnedLearningExperience } from "@/lib/data/learning-experience";
 import { createPronunciationFeedbackProvider } from "@/lib/providers/pronunciation/factory";
 import { MAX_SHADOWING_REQUEST_BYTES } from "@/lib/pronunciation/limits";
@@ -8,6 +9,7 @@ import {
   type PronunciationFeedbackErrorCode,
 } from "@/lib/pronunciation/types";
 import { validatePronunciationFormData } from "@/lib/pronunciation/validation";
+import { exceedsDeclaredBodyLimit, rejectUntrustedMutation } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 export const maxDuration = 20;
@@ -37,12 +39,13 @@ function errorResponse(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedMutation(request);
+  if (rejected) return rejected;
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
     return errorResponse(new PronunciationFeedbackError("invalid_recording"));
   }
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (Number.isFinite(contentLength) && contentLength > MAX_SHADOWING_REQUEST_BYTES) {
+  if (exceedsDeclaredBodyLimit(request, MAX_SHADOWING_REQUEST_BYTES)) {
     return errorResponse(new PronunciationFeedbackError("too_large"));
   }
 
@@ -52,6 +55,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (!(await consumePaidUsage(auth.user.id, "pronunciation"))) throw new PronunciationFeedbackError("feedback_rate_limited");
     const recording = await validatePronunciationFormData(await request.formData());
     const experience = await getOwnedLearningExperience(auth, recording.sessionId);
     const target = experience?.analysis.chunks[recording.chunkIndex]?.sourceText;
@@ -63,4 +67,3 @@ export async function POST(request: Request) {
     return errorResponse(error);
   }
 }
-

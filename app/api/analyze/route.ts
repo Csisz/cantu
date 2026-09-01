@@ -2,8 +2,11 @@ import { ZodError } from "zod";
 import { analyzeVerifiedSource } from "@/lib/analysis/service";
 import { analysisRequestSchema } from "@/lib/analysis/validation";
 import { getAuthContext } from "@/lib/data/auth";
+import { consumePaidUsage } from "@/lib/data/usage";
 import { createLanguageAnalysisProvider } from "@/lib/providers/analysis/factory";
 import { AnalysisError, type AnalysisErrorCode } from "@/lib/providers/analysis/types";
+import { PUBLIC_BETA_LIMITS } from "@/lib/security/limits";
+import { exceedsDeclaredBodyLimit, rejectUntrustedMutation } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -37,6 +40,8 @@ function errorResponse(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedMutation(request);
+  if (rejected) return rejected;
   if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
     return errorResponse(new AnalysisError("invalid_source"));
   }
@@ -44,10 +49,10 @@ export async function POST(request: Request) {
   if (auth.status !== "authenticated") return errorResponse(new AnalysisError("unauthenticated"));
 
   try {
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (Number.isFinite(contentLength) && contentLength > 12_000) {
+    if (exceedsDeclaredBodyLimit(request, PUBLIC_BETA_LIMITS.jsonRequestBytes)) {
       throw new AnalysisError("invalid_source");
     }
+    if (!(await consumePaidUsage(auth.user.id, "analysis"))) throw new AnalysisError("rate_limited");
     const input = analysisRequestSchema.parse(await request.json());
     const provider = createLanguageAnalysisProvider();
     return Response.json(await analyzeVerifiedSource(auth, input, provider, request.signal));

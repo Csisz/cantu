@@ -264,6 +264,30 @@ export type Database = {
           },
         ]
       }
+      private_usage_events: {
+        Row: {
+          created_at: string
+          id: number
+          operation: string
+          request_nonce: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: never
+          operation: string
+          request_nonce: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: never
+          operation?: string
+          request_nonce?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       processing_attempts: {
         Row: {
           confidence: number | null
@@ -645,6 +669,15 @@ export type Database = {
           p_latency_ms: number
           p_session_id: string
           p_status: string
+        }
+        Returns: boolean
+      }
+      consume_private_usage: {
+        Args: {
+          p_limit: number
+          p_operation: string
+          p_request_nonce: string
+          p_user_id: string
         }
         Returns: boolean
       }

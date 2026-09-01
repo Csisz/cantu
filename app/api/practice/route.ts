@@ -5,6 +5,8 @@ import { practiceRequestSchema } from "@/lib/practice/types";
 import { respondToConversationPractice, startConversationPractice } from "@/lib/practice/service";
 import { createConversationPracticeProvider } from "@/lib/providers/practice/factory";
 import { PracticeError, type PracticeErrorCode } from "@/lib/providers/practice/types";
+import { PUBLIC_BETA_LIMITS } from "@/lib/security/limits";
+import { exceedsDeclaredBodyLimit, rejectUntrustedMutation } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 export const maxDuration = 35;
@@ -34,14 +36,15 @@ function errorResponse(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedMutation(request);
+  if (rejected) return rejected;
   if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
     return errorResponse(new PracticeError("invalid_request"));
   }
   const auth = await getAuthContext();
   if (auth.status !== "authenticated") return errorResponse(new PracticeError("unauthenticated"));
   try {
-    const contentLength = Number(request.headers.get("content-length") ?? 0);
-    if (Number.isFinite(contentLength) && contentLength > 12_000) throw new PracticeError("invalid_request");
+    if (exceedsDeclaredBodyLimit(request, PUBLIC_BETA_LIMITS.jsonRequestBytes)) throw new PracticeError("invalid_request");
     const secret = getPracticeStateSecret();
     if (!secret) throw new PracticeError("not_configured");
     const input = practiceRequestSchema.parse(await request.json());

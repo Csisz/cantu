@@ -3998,3 +3998,4 @@
     gap: 3px;
   }
 }
+.accountPrivacy{margin-top:2rem;padding:1.5rem;border:1px solid var(--line,rgba(255,255,255,.16));border-radius:20px;display:grid;gap:.8rem}.accountPrivacy h3,.accountPrivacy p{margin:0}.accountDeleteForm{display:grid;gap:.75rem;max-width:580px}.accountDeleteForm input{min-height:44px;border-radius:10px;border:1px solid currentColor;padding:.7rem;background:transparent;color:inherit}.accountDeleteForm div{display:flex;flex-wrap:wrap;gap:.75rem}

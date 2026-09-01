@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { getAuthContext } from "@/lib/data/auth";
 import { verifyTranscriptCandidate } from "@/lib/data/learning-sessions";
+import { PUBLIC_BETA_LIMITS } from "@/lib/security/limits";
+import { exceedsDeclaredBodyLimit, rejectUntrustedMutation } from "@/lib/security/request";
 
 const requestSchema = z.object({
   sessionId: z.string().uuid(),
@@ -8,6 +10,9 @@ const requestSchema = z.object({
 }).strict();
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedMutation(request);
+  if (rejected) return rejected;
+  if (exceedsDeclaredBodyLimit(request, PUBLIC_BETA_LIMITS.jsonRequestBytes)) return Response.json({ error: { code: "invalid_audio" } }, { status: 413 });
   const auth = await getAuthContext();
   if (auth.status !== "authenticated") {
     return Response.json({ error: { code: "unauthenticated" } }, { status: 401 });

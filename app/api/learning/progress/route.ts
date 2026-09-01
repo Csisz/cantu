@@ -1,8 +1,13 @@
 import { getAuthContext } from "@/lib/data/auth";
 import { saveLearningProgress } from "@/lib/data/learning-experience";
 import { progressMutationSchema } from "@/lib/learning/player";
+import { PUBLIC_BETA_LIMITS } from "@/lib/security/limits";
+import { exceedsDeclaredBodyLimit, rejectUntrustedMutation } from "@/lib/security/request";
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedMutation(request);
+  if (rejected) return rejected;
+  if (exceedsDeclaredBodyLimit(request, PUBLIC_BETA_LIMITS.jsonRequestBytes)) return Response.json({ status: "error", message: "Túl nagy kérés." }, { status: 413 });
   try {
     const auth = await getAuthContext();
     if (auth.status !== "authenticated") {

@@ -1,4 +1,5 @@
 import { getAuthContext } from "@/lib/data/auth";
+import { consumePaidUsage } from "@/lib/data/usage";
 import { createSpeechToTextProvider } from "@/lib/providers/speech/factory";
 import { TranscriptionError, type TranscriptionErrorCode } from "@/lib/providers/speech/types";
 import { transcribeValidatedClip } from "@/lib/transcription/service";
@@ -6,6 +7,7 @@ import {
   MAX_TRANSCRIPTION_REQUEST_BYTES,
   validateTranscriptionFormData,
 } from "@/lib/transcription/validation";
+import { exceedsDeclaredBodyLimit, rejectUntrustedMutation } from "@/lib/security/request";
 
 export const runtime = "nodejs";
 export const maxDuration = 35;
@@ -33,12 +35,13 @@ function errorResponse(error: unknown) {
 }
 
 export async function POST(request: Request) {
+  const rejected = rejectUntrustedMutation(request);
+  if (rejected) return rejected;
   const contentType = request.headers.get("content-type") ?? "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data")) {
     return errorResponse(new TranscriptionError("invalid_audio"));
   }
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (Number.isFinite(contentLength) && contentLength > MAX_TRANSCRIPTION_REQUEST_BYTES) {
+  if (exceedsDeclaredBodyLimit(request, MAX_TRANSCRIPTION_REQUEST_BYTES)) {
     return errorResponse(new TranscriptionError("too_large"));
   }
 
@@ -48,6 +51,7 @@ export async function POST(request: Request) {
   }
 
   try {
+    if (!(await consumePaidUsage(auth.user.id, "transcription"))) throw new TranscriptionError("rate_limited");
     const clip = await validateTranscriptionFormData(await request.formData());
     const provider = createSpeechToTextProvider();
     const result = await transcribeValidatedClip(auth, clip, provider, request.signal);
