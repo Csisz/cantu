@@ -13,6 +13,7 @@ export async function GET() {
       speechProviderConfiguration: Boolean(process.env.OPENAI_API_KEY?.trim()),
       practiceStateSigning: Boolean(process.env.PRACTICE_STATE_SECRET?.trim()),
       productionMocksDisabled: safe,
+      billingMode: process.env.CANTU_BILLING_MODE?.trim() || "disabled",
     },
   }, { status: safe ? 200 : 503, headers: { "cache-control": "no-store" } });
 }

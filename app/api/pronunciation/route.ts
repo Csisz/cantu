@@ -1,5 +1,5 @@
 import { getAuthContext } from "@/lib/data/auth";
-import { consumePaidUsage } from "@/lib/data/usage";
+import { reserveProviderUsage } from "@/lib/data/usage";
 import { getOwnedLearningExperience } from "@/lib/data/learning-experience";
 import { createPronunciationFeedbackProvider } from "@/lib/providers/pronunciation/factory";
 import { MAX_SHADOWING_REQUEST_BYTES } from "@/lib/pronunciation/limits";
@@ -22,6 +22,7 @@ const statusByCode: Record<PronunciationFeedbackErrorCode, number> = {
   too_long: 400,
   session_not_found: 404,
   feedback_rate_limited: 429,
+  quota_exceeded: 402,
   feedback_not_configured: 503,
   feedback_timeout: 504,
   feedback_failed: 502,
@@ -55,11 +56,12 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (!(await consumePaidUsage(auth.user.id, "pronunciation"))) throw new PronunciationFeedbackError("feedback_rate_limited");
     const recording = await validatePronunciationFormData(await request.formData());
     const experience = await getOwnedLearningExperience(auth, recording.sessionId);
     const target = experience?.analysis.chunks[recording.chunkIndex]?.sourceText;
     if (!experience || !target) throw new PronunciationFeedbackError("session_not_found");
+    const usage = await reserveProviderUsage(auth.user.id, "pronunciation");
+    if (!usage.allowed) throw new PronunciationFeedbackError(usage.reason === "quota_exceeded" ? "quota_exceeded" : usage.reason === "unavailable" ? "feedback_failed" : "feedback_rate_limited");
     const provider = createPronunciationFeedbackProvider();
     const feedback = await evaluatePronunciationRecording(auth, recording, target, provider, request.signal);
     return Response.json(feedback);

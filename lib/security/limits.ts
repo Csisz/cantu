@@ -6,6 +6,7 @@ export const PUBLIC_BETA_LIMITS = {
   jsonRequestBytes: 12_000,
   sourceTextChars: 2_000,
   practiceResponseChars: 1_000,
+  billingWebhookBytes: 256_000,
 } as const;
 
 export type GuardedOperation = "transcription" | "analysis" | "pronunciation" | "practice";

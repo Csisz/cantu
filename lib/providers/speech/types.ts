@@ -31,6 +31,7 @@ export type TranscriptionErrorCode =
   | "transcription_failed"
   | "provider_unavailable"
   | "rate_limited"
+  | "quota_exceeded"
   | "not_configured"
   | "unauthenticated";
 

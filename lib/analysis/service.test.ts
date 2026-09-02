@@ -135,9 +135,25 @@ describe("learning analysis orchestration", () => {
       cachedResult: readyAnalysis(),
     });
     const provider = providerWith([]);
-    const result = await analyzeVerifiedSource(auth, request, provider);
+    const reserve = vi.fn(async () => "reserved" as const);
+    const result = await analyzeVerifiedSource(auth, request, provider, undefined, reserve);
     expect(result.cached).toBe(true);
     expect(provider.analyze).not.toHaveBeenCalled();
+    expect(reserve).not.toHaveBeenCalled();
+  });
+
+  it("reserves quota once before a real provider attempt", async () => {
+    const reserve = vi.fn(async () => "reserved" as const);
+    const provider = providerWith([readyAnalysis()]);
+    await analyzeVerifiedSource(auth, request, provider, undefined, reserve);
+    expect(reserve).toHaveBeenCalledTimes(1);
+    expect(provider.analyze).toHaveBeenCalledTimes(1);
+  });
+  it("does not call the provider and closes the attempt when quota is exhausted", async () => {
+    const provider = providerWith([readyAnalysis()]);
+    await expect(analyzeVerifiedSource(auth, request, provider, undefined, async () => "quota_exceeded")).rejects.toMatchObject({ code: "quota_exceeded" });
+    expect(provider.analyze).not.toHaveBeenCalled();
+    expect(persistence.fail).toHaveBeenCalledWith(auth, expect.objectContaining({ errorCode: "quota_exceeded" }));
   });
 
   it("creates deterministic but content-hiding source fingerprints", () => {

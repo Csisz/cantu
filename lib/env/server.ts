@@ -34,6 +34,10 @@ export function isE2EPracticeMockEnabled() {
   );
 }
 
+export function isE2EBillingMockEnabled() {
+  return process.env.NODE_ENV !== "production" && process.env.CANTU_E2E_BILLING_MOCK === "1";
+}
+
 export function getPracticeStateSecret() {
   const configured = process.env.PRACTICE_STATE_SECRET?.trim();
   if (configured) return configured;
@@ -48,6 +52,7 @@ export function productionMockFlags() {
     "CANTU_E2E_STT_MOCK",
     "CANTU_E2E_ANALYSIS_MOCK",
     "CANTU_E2E_PRACTICE_MOCK",
+    "CANTU_E2E_BILLING_MOCK",
   ].filter((name) => process.env[name] === "1");
 }
 
@@ -57,6 +62,15 @@ export function assertSafeServerConfiguration() {
   if (unsafeFlags.length) throw new Error("Unsafe test configuration is disabled in production");
   if (!process.env.PRACTICE_STATE_SECRET?.trim() || process.env.PRACTICE_STATE_SECRET.trim().length < 32) {
     throw new Error("PRACTICE_STATE_SECRET must be configured securely in production");
+  }
+  const billingMode = process.env.CANTU_BILLING_MODE?.trim() || "disabled";
+  if (!["disabled", "test", "live"].includes(billingMode)) throw new Error("CANTU_BILLING_MODE is invalid");
+  const stripeKey = process.env.STRIPE_SECRET_KEY?.trim() || "";
+  if (billingMode !== "disabled" && (!stripeKey || !process.env.STRIPE_WEBHOOK_SECRET?.trim() || !process.env.STRIPE_PRICE_ID_CANTU_PLUS?.trim())) {
+    throw new Error("Enabled billing requires complete server-only Stripe configuration");
+  }
+  if ((billingMode === "live" && stripeKey.startsWith("sk_test_")) || (billingMode === "test" && stripeKey.startsWith("sk_live_"))) {
+    throw new Error("Stripe key and billing mode conflict");
   }
 }
 

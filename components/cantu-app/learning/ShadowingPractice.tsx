@@ -37,6 +37,7 @@ const feedbackErrorCopy: Record<PronunciationFeedbackErrorCode, string> = {
   too_long: "A gyakorlófelvétel legfeljebb 12 másodperces lehet.",
   session_not_found: "Ez a privát tanulási munkamenet most nem érhető el.",
   feedback_rate_limited: "Most elérted a rövid idejű gyakorlási korlátot. Hallgasd vissza helyben, és próbáld később.",
+  quota_exceeded: "Erre a hónapra elfogyott a kiejtési visszajelzési kereted. A saját felvételedet továbbra is visszahallgathatod.",
   feedback_not_configured: "A kiejtési visszajelzés nincs beállítva ezen a környezeten.",
   feedback_timeout: "A visszajelzés túl sokáig tartott. A helyi felvételed megmaradt; próbáld újra.",
   feedback_failed: "A visszajelzés most nem sikerült. A helyi felvételed megmaradt; újrapróbálhatod.",
@@ -155,7 +156,7 @@ export function ShadowingPractice({
         <h3 ref={resultHeadingRef} tabIndex={-1}>{view.status === "auth_required" ? "A visszajelzéshez jelentkezz be" : "A visszajelzés megakadt"}</h3>
         <p role="alert">{message}</p>
         {recorder.recording ? <audio controls src={recorder.recording.previewUrl} aria-label="Saját gyakorlófelvételem visszahallgatása" /> : null}
-        {view.status === "auth_required" ? <a className={styles.lessonSecondaryLink} href="/app?auth=required#library-title">Bejelentkezem</a> : (
+        {view.status === "auth_required" ? <a className={styles.lessonSecondaryLink} href="/app?auth=required#library-title">Bejelentkezem</a> : view.code === "quota_exceeded" ? <a className={styles.lessonPrimary} href="/pricing">Cantu Plus</a> : (
           <button className={styles.lessonPrimary} type="button" onClick={() => void requestFeedback()}>Újrapróbálom a visszajelzést</button>
         )}
         <button className={styles.lessonSecondaryButton} type="button" onClick={retryRecording}>Újra felveszem</button>

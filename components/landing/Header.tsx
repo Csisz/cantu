@@ -16,6 +16,7 @@ export function Header() {
         <a className={styles.navLink} href="#forrasbol-tanulas">
           Mit kapsz?
         </a>
+        <Link className={styles.navLink} href="/pricing">Csomagok</Link>
         <Link className={styles.navCta} href="/app?mode=listen">
           Kezdés
         </Link>

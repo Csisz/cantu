@@ -4,6 +4,7 @@ import type { AuthContext } from "@/lib/auth/types";
 import type { LearningHistorySnapshot } from "@/lib/data/learning-sessions";
 import type { PhrasebookSnapshot } from "@/lib/review/types";
 import type { InputMode } from "@/lib/input/types";
+import type { BillingSnapshot } from "@/lib/billing/types";
 import { AccountSection } from "./AccountSection";
 import { InputStudio } from "./InputStudio";
 import styles from "./app.module.css";
@@ -13,10 +14,11 @@ type AppShellProps = {
   auth: AuthContext;
   history: LearningHistorySnapshot;
   phrasebook: PhrasebookSnapshot;
+  billing: BillingSnapshot;
   authNotice?: string;
 };
 
-export function AppShell({ initialMode, auth, history, phrasebook, authNotice }: AppShellProps) {
+export function AppShell({ initialMode, auth, history, phrasebook, billing, authNotice }: AppShellProps) {
   return (
     <main className={styles.appPage}>
       <header className={styles.appHeader}>
@@ -47,11 +49,11 @@ export function AppShell({ initialMode, auth, history, phrasebook, authNotice }:
           initialMode={initialMode}
           authenticated={auth.status === "authenticated"}
         />
-        <AccountSection auth={auth} history={history} phrasebook={phrasebook} notice={authNotice} />
+        <AccountSection auth={auth} history={history} phrasebook={phrasebook} billing={billing} notice={authNotice} />
       </section>
       <footer className={styles.appFooter}>
         <span><i aria-hidden="true" /> Helyi Input Studio · privát forráskezelés</span>
-        <span><Link href="/privacy">Adatvédelem</Link> · <Link href="/terms">Feltételek</Link> · <Link href="/">Bemutató</Link></span>
+        <span><Link href="/pricing">Csomagok</Link> · <Link href="/privacy">Adatvédelem</Link> · <Link href="/terms">Feltételek</Link> · <Link href="/">Bemutató</Link></span>
       </footer>
     </main>
   );

@@ -34,6 +34,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_customers: {
+        Row: {
+          created_at: string
+          stripe_customer_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          stripe_customer_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          stripe_customer_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      billing_subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          latest_stripe_event_created: number
+          status: string
+          stripe_customer_id: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          latest_stripe_event_created?: number
+          status: string
+          stripe_customer_id: string
+          stripe_price_id: string
+          stripe_subscription_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          latest_stripe_event_created?: number
+          status?: string
+          stripe_customer_id?: string
+          stripe_price_id?: string
+          stripe_subscription_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_subscription_customer_owner_fkey"
+            columns: ["user_id", "stripe_customer_id"]
+            isOneToOne: false
+            referencedRelation: "billing_customers"
+            referencedColumns: ["user_id", "stripe_customer_id"]
+          },
+        ]
+      }
+      billing_webhook_events: {
+        Row: {
+          event_type: string
+          processed_at: string
+          stripe_event_created: number
+          stripe_event_id: string
+        }
+        Insert: {
+          event_type: string
+          processed_at?: string
+          stripe_event_created: number
+          stripe_event_id: string
+        }
+        Update: {
+          event_type?: string
+          processed_at?: string
+          stripe_event_created?: number
+          stripe_event_id?: string
+        }
+        Relationships: []
+      }
       learning_progress: {
         Row: {
           created_at: string
@@ -636,6 +728,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_stripe_subscription_event: {
+        Args: {
+          p_cancel_at_period_end: boolean
+          p_customer_id: string
+          p_event_created: number
+          p_event_id: string
+          p_event_type: string
+          p_period_end: string
+          p_period_start: string
+          p_price_id: string
+          p_status: string
+          p_subscription_id: string
+        }
+        Returns: string
+      }
       clear_learning_session_source: {
         Args: { target_session_id: string }
         Returns: boolean
@@ -690,6 +797,21 @@ export type Database = {
           p_user_id: string
         }
         Returns: boolean
+      }
+      record_stripe_checkout_event: {
+        Args: { p_event_created: number; p_event_id: string }
+        Returns: string
+      }
+      reserve_entitled_usage: {
+        Args: {
+          p_free_monthly_limit: number
+          p_hourly_limit: number
+          p_operation: string
+          p_plus_monthly_limit: number
+          p_request_nonce: string
+          p_user_id: string
+        }
+        Returns: Json
       }
       start_learning_analysis: {
         Args: {

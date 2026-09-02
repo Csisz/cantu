@@ -1,4 +1,5 @@
 import { expect, test, type ConsoleMessage, type Page } from "@playwright/test";
+import { createHmac } from "node:crypto";
 
 function watchRuntime(page: Page) {
   const pageErrors: string[] = [];
@@ -687,4 +688,69 @@ test("saved language powers a bounded private Real-Life Practice Lab", async ({ 
   }
   await expectNoHorizontalOverflow(page);
   expect(runtime()).toEqual({ pageErrors: [], consoleErrors: [] });
+});
+
+test("Free upgrades only after a signed mocked Stripe webhook and can open the Portal", async ({ page }) => {
+  await signInWithDeterministicAuth(page);
+  await page.goto("/pricing");
+  await expect(page.getByRole("heading", { name: "Ingyenes" })).toBeVisible();
+  await expect(page.getByText("Tesztár / hó")).toBeVisible();
+  await page.getByRole("button", { name: "Cantu Plusra váltok" }).click();
+  await expect(page.getByText(/teszt Checkout visszatért/i)).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Free" })).toBeVisible();
+
+  const raw = JSON.stringify({
+    eventId: "evt_e2e_plus_300", eventType: "customer.subscription.updated", eventCreated: 300,
+    customerId: "cus_cantu_e2e00000-0000-4000-8000-000000000001", subscriptionId: "sub_e2e_plus",
+    priceId: "price_e2e_plus", status: "active", currentPeriodStart: "2026-09-01T00:00:00.000Z",
+    currentPeriodEnd: "2099-10-01T00:00:00.000Z", cancelAtPeriodEnd: false,
+  });
+  const signature = createHmac("sha256", "whsec_e2e_placeholder").update(raw).digest("hex");
+  const webhook = await page.request.post("/api/billing/webhook", { data: raw, headers: { "stripe-signature": signature, "content-type": "application/json" } });
+  expect(webhook.ok()).toBe(true);
+  await page.goto("/app");
+  await expect(page.getByRole("heading", { name: "Cantu Plus" })).toBeVisible();
+  await page.getByRole("button", { name: "Előfizetés kezelése" }).click();
+  await expect(page.getByText(/teszt ügyfélportálról/i)).toBeVisible();
+});
+
+test("billing webhook rejects bad signatures, replays safely and preserves newer state", async ({ page }) => {
+  await signInWithDeterministicAuth(page);
+  await page.goto("/pricing");
+  await page.getByRole("button", { name: "Cantu Plusra váltok" }).click();
+  const event = (eventId: string, eventCreated: number, status: "active" | "canceled") => JSON.stringify({
+    eventId, eventType: "customer.subscription.updated", eventCreated,
+    customerId: "cus_cantu_e2e00000-0000-4000-8000-000000000001", subscriptionId: "sub_e2e_order",
+    priceId: "price_e2e_plus", status, currentPeriodStart: "2026-09-01T00:00:00.000Z",
+    currentPeriodEnd: status === "active" ? "2099-10-01T00:00:00.000Z" : "2026-09-01T00:00:00.000Z", cancelAtPeriodEnd: false,
+  });
+  const send = (raw: string, signature = createHmac("sha256", "whsec_e2e_placeholder").update(raw).digest("hex")) => page.request.post("/api/billing/webhook", { data: raw, headers: { "stripe-signature": signature, "content-type": "application/json" } });
+  expect((await send(event("evt_bad", 1, "active"), "bad")).status()).toBe(400);
+  const current = event("evt_current", 500, "active");
+  expect((await send(current)).ok()).toBe(true);
+  expect((await send(current)).ok()).toBe(true);
+  const old = event("evt_old", 400, "canceled");
+  expect((await send(old)).ok()).toBe(true);
+  await page.goto("/app");
+  await expect(page.getByRole("heading", { name: "Cantu Plus" })).toBeVisible();
+});
+
+test("paid disposable account cancels mocked billing before data and auth deletion", async ({ page }) => {
+  await signInWithDeterministicAuth(page);
+  await page.goto("/pricing");
+  await page.getByRole("button", { name: "Cantu Plusra váltok" }).click();
+  const raw = JSON.stringify({
+    eventId: "evt_e2e_delete", eventType: "customer.subscription.created", eventCreated: 600,
+    customerId: "cus_cantu_e2e00000-0000-4000-8000-000000000001", subscriptionId: "sub_e2e_delete",
+    priceId: "price_e2e_plus", status: "active", currentPeriodStart: "2026-09-01T00:00:00.000Z",
+    currentPeriodEnd: "2099-10-01T00:00:00.000Z", cancelAtPeriodEnd: false,
+  });
+  const signature = createHmac("sha256", "whsec_e2e_placeholder").update(raw).digest("hex");
+  expect((await page.request.post("/api/billing/webhook", { data: raw, headers: { "stripe-signature": signature, "content-type": "application/json" } })).ok()).toBe(true);
+  await page.goto("/app");
+  await expect(page.getByRole("heading", { name: "Cantu Plus" })).toBeVisible();
+  await page.getByRole("button", { name: "Cantu-fiók törlése" }).click();
+  await page.getByLabel(/Megerősítésként/).fill("TÖRLÉS");
+  await page.getByRole("button", { name: "Végleg törlöm a fiókom" }).click();
+  await expect(page.getByRole("heading", { name: "A Cantu-adataidat töröltük." })).toBeVisible();
 });

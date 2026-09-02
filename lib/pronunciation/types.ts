@@ -56,6 +56,7 @@ export type PronunciationFeedbackErrorCode =
   | "too_long"
   | "session_not_found"
   | "feedback_rate_limited"
+  | "quota_exceeded"
   | "feedback_not_configured"
   | "feedback_timeout"
   | "feedback_failed"
@@ -70,4 +71,3 @@ export class PronunciationFeedbackError extends Error {
     this.name = "PronunciationFeedbackError";
   }
 }
-

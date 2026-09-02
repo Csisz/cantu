@@ -23,6 +23,7 @@ export type PracticeErrorCode =
   | "duplicate_request"
   | "not_configured"
   | "rate_limited"
+  | "quota_exceeded"
   | "provider_unavailable"
   | "provider_timeout"
   | "invalid_provider_response"

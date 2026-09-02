@@ -4,6 +4,8 @@ import type { AuthContext } from "@/lib/auth/types";
 import { isE2EAuthMockEnabled } from "@/lib/env/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { clearE2ELearningSessions, exportE2EAccountData } from "./e2e-learning-store";
+import { clearE2EBilling } from "@/lib/billing/e2e-store";
+import { getBillingSnapshot } from "./billing";
 
 function userOf(auth: AuthContext) {
   if (auth.status !== "authenticated") throw new Error("Unauthenticated");
@@ -12,7 +14,11 @@ function userOf(auth: AuthContext) {
 
 export async function exportOwnedAccountData(auth: AuthContext) {
   const user = userOf(auth);
-  if (isE2EAuthMockEnabled()) return exportE2EAccountData(user);
+  if (isE2EAuthMockEnabled()) {
+    const base = exportE2EAccountData(user);
+    const billing = await getBillingSnapshot(auth);
+    return { ...base, billing: { plan: billing.plan, subscriptionStatus: billing.subscriptionStatus, currentPeriodEnd: billing.currentPeriodEnd } };
+  }
   const admin = createAdminClient();
   const [profile, sessions, phrases, reviews] = await Promise.all([
     admin.from("profiles").select("display_name, created_at, updated_at").eq("id", user.id).maybeSingle(),
@@ -28,6 +34,7 @@ export async function exportOwnedAccountData(auth: AuthContext) {
     admin.from("learning_results").select("session_id, schema_version, generator_version, result_json, created_at, updated_at").in("session_id", sessionIds),
   ]) : [{ data: [], error: null }, { data: [], error: null }];
   if (progress.error ?? results.error) throw new Error("Account export unavailable");
+  const billing = await getBillingSnapshot(auth);
   return {
     exportedAt: new Date().toISOString(),
     account: { email: user.email, displayName: user.displayName, profile: profile.data },
@@ -36,6 +43,7 @@ export async function exportOwnedAccountData(auth: AuthContext) {
     learningResults: results.data,
     savedPhrases: phrases.data,
     phraseReview: reviews.data,
+    billing: { plan: billing.plan, subscriptionStatus: billing.subscriptionStatus, currentPeriodEnd: billing.currentPeriodEnd },
   };
 }
 
@@ -43,6 +51,7 @@ export async function deleteOwnedAccount(auth: AuthContext) {
   const user = userOf(auth);
   if (isE2EAuthMockEnabled()) {
     clearE2ELearningSessions(user.id);
+    clearE2EBilling(user.id);
     return;
   }
   const admin = createAdminClient();

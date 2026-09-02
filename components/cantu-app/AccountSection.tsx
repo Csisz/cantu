@@ -13,12 +13,15 @@ import type { LearningHistoryItem } from "@/lib/domain/learning-session";
 import { DeleteLearningControl } from "./DeleteLearningControl";
 import { PhrasebookSection } from "./PhrasebookSection";
 import { AccountPrivacyControls } from "./AccountPrivacyControls";
+import { BillingSection } from "@/components/billing/BillingSection";
+import type { BillingSnapshot } from "@/lib/billing/types";
 import styles from "./app.module.css";
 
 type AccountSectionProps = {
   auth: AuthContext;
   history: LearningHistorySnapshot;
   phrasebook?: PhrasebookSnapshot;
+  billing?: BillingSnapshot;
   notice?: string;
 };
 
@@ -45,7 +48,7 @@ function sessionMetadata(item: LearningHistoryItem) {
   return "Mikrofonos forrás";
 }
 
-export function AccountSection({ auth, history, phrasebook = { status: "ready", items: [], dueCount: 0 }, notice }: AccountSectionProps) {
+export function AccountSection({ auth, history, phrasebook = { status: "ready", items: [], dueCount: 0 }, billing, notice }: AccountSectionProps) {
   const [optimisticItems, setOptimisticItems] = useState<LearningHistoryItem[]>([]);
   const [removedIds, setRemovedIds] = useState<string[]>([]);
   const persistedItems = history.status === "ready" ? history.items : [];
@@ -195,6 +198,7 @@ export function AccountSection({ auth, history, phrasebook = { status: "ready", 
         </ul>
       ) : null}
       {auth.status === "authenticated" ? <PhrasebookSection snapshot={phrasebook} /> : null}
+      {auth.status === "authenticated" && billing ? <BillingSection snapshot={billing} /> : null}
       {auth.status === "authenticated" ? <AccountPrivacyControls email={auth.user.email} /> : null}
     </section>
   );

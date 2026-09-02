@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AuthContext } from "@/lib/auth/types";
 import { bringOwnedPhraseReviewForward, loadOwnedPhrases } from "@/lib/data/review";
-import { consumePracticeUsage } from "@/lib/data/usage";
+import { reserveProviderUsage } from "@/lib/data/usage";
 import type { ConversationPracticeProvider, PracticeProviderOptions } from "@/lib/providers/practice/types";
 import { PracticeError } from "@/lib/providers/practice/types";
 import { getPracticeScenario } from "./scenarios";
@@ -126,11 +126,12 @@ export async function startConversationPractice(
   signal?: AbortSignal,
 ) {
   const user = requireUser(auth);
-  if (!(await consumePracticeUsage(user.id))) throw new PracticeError("rate_limited");
   const scenario = getPracticeScenario(scenarioId);
   if (!scenario) throw new PracticeError("invalid_request");
   const targets = selectPracticeTargets(await loadOwnedPhrases(auth));
   if (!targets.length) throw new PracticeError("no_saved_phrases");
+  const usage = await reserveProviderUsage(user.id, "practice");
+  if (!usage.allowed) throw new PracticeError(usage.reason === "quota_exceeded" ? "quota_exceeded" : usage.reason === "unavailable" ? "provider_unavailable" : "rate_limited");
   const input: PracticeStartInput = { scenario, targets: providerTargets(targets) };
   const turn = await callWithOneCorrection(
     (options) => provider.startScenario(input, { ...options, signal }),
@@ -163,8 +164,6 @@ export async function respondToConversationPractice(
   const state = readPracticeStateToken(stateToken, secret);
   if (!state || state.userId !== user.id) throw new PracticeError("session_invalid");
   if (state.turnCount >= MAX_PRACTICE_TURNS) throw new PracticeError("turn_limit_reached");
-  if (!(await consumePracticeUsage(user.id, state.nonce))) throw new PracticeError("duplicate_request");
-
   try {
     const scenario = getPracticeScenario(state.scenarioId);
     if (!scenario) throw new PracticeError("session_invalid");
@@ -178,6 +177,8 @@ export async function respondToConversationPractice(
       meaningHu: phrase!.meaningHu,
       noteHu: phrase!.noteHu,
     }));
+    const usage = await reserveProviderUsage(user.id, "practice", state.nonce);
+    if (!usage.allowed) throw new PracticeError(usage.reason === "duplicate_request" ? "duplicate_request" : usage.reason === "quota_exceeded" ? "quota_exceeded" : usage.reason === "unavailable" ? "provider_unavailable" : "rate_limited");
     const turnNumber = state.turnCount + 1;
     const input: PracticeResponseInput = {
       scenario,

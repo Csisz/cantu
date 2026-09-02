@@ -201,7 +201,20 @@ Telepítés előtt futtasd:
 npm run readiness:production
 ```
 
-A parancs külön `PASS`, `WARN`, `BLOCK` állapotot ad a policy route-okra, production mockokra, Practice signing secretre, kapcsolati adatra és env-alakra. Nem jelent jogi jóváhagyást és nem hív élő szolgáltatót. A részletes retention, provider-, biztonsági és deployment anyag a [`docs/public-beta`](docs/public-beta) mappában van. Production env-ek: browser-safe Supabase URL/publishable key; server-only Supabase secret, OpenAI key és külön `PRACTICE_STATE_SECRET`; a `CANTU_E2E_*` és Higgsfield kulcsok kizárólag fejlesztésiek. Tényleges deployment és M12 billing nincs implementálva.
+A parancs külön `PASS`, `WARN`, `BLOCK` állapotot ad a policy route-okra, production mockokra, Practice signing secretre, kapcsolati adatra és env-alakra. Nem jelent jogi jóváhagyást és nem hív élő szolgáltatót. A részletes retention, provider-, biztonsági és deployment anyag a [`docs/public-beta`](docs/public-beta) mappában van. Production env-ek: browser-safe Supabase URL/publishable key; server-only Supabase secret, OpenAI key, külön `PRACTICE_STATE_SECRET` és — bekapcsolt billingnél — Stripe secretek; a `CANTU_E2E_*` és Higgsfield kulcsok kizárólag fejlesztésiek. Tényleges production deployment nincs végrehajtva.
+
+## Milestone 12 — Free / Cantu Plus alapok
+
+A `/pricing` Free és egyetlen Cantu Plus csomagot mutat. A végleges ár nincs hardcode-olva: a böngésző csak a `cantu_plus` belső kulcsot küldi, a szerver a megbízható `STRIPE_PRICE_ID_CANTU_PLUS` értékre képezi. A fizetés Stripe-hosted Checkoutban, a kezelés Customer Portalban történik; a Cantu nem kezel nyers kártyaadatot.
+
+- `BillingProvider` választja el a domaint a Stripe SDK-tól, a tesztek determinisztikus adaptert használnak.
+- Plus jogosultságot csak aláírt, allowlistelt, idempotens és eseménysorrendet védő webhook adhat. A sikeres redirect csak ellenőrzés alatt álló állapotot jelez.
+- Az órás abuse guard és a Free/Plus havi keret külön szabály, de egy atomikus PostgreSQL-foglalás védi őket a párhuzamos túlfogyasztástól.
+- Elemzés-cache találat, helyi hangkijelölés/lejátszás, mentett lecke, phrasebook és determinisztikus review nem fogyaszt keretet.
+- Plus megszűnésekor a privát tanulási adatok megmaradnak. Fizetős fiók törlése csak sikeres Stripe-oldali előfizetés-megszüntetés után folytatódik.
+- `CANTU_BILLING_MODE=disabled|test|live` választja szét a Free-only, teszt és live alakot. A readiness blokkolja a hiányos vagy nyilvánvalóan kevert test/live konfigurációt.
+
+Helyi Stripe CLI és pre-live sorrend: [`docs/billing/STRIPE_RUNBOOK.md`](docs/billing/STRIPE_RUNBOOK.md). A keretek és a cost modell indulás előtti hangolást igényel; élő kulcsot és árat tilos commitolni. A jogi, DPA-, tax/VAT-, számlázási, refund-, production domain/SMTP és Stripe live konfiguráció továbbra is kézi launch gate.
 
 ## Adatvédelem és perzisztencia
 
@@ -281,4 +294,4 @@ A script kizárólag biztonságos modell/latencia/token- és strukturális darab
 
 ## Kifejezetten halasztva
 
-Nincs TTS, új fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, végtelen általános beszélgetős tutor, további nyelvpár, nyilvános megosztás, social feature, XP/streak/gamifikációs gazdaság, billing, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció. A public-beta deployment/compliance hardening M11-re marad.
+Nincs TTS, új fonéma- vagy native-likeness pontozás, biometrikus beszélőazonosítás, érzelem-/személyiségkövetkeztetés, automatikus phrasebook-mentés, végtelen általános beszélgetős tutor, további nyelvpár, nyilvános megosztás, social feature, XP/streak/gamifikációs gazdaság, lyrics API, zeneazonosítás vagy teljes fájlos/szekvenciális transzkripció. Nincs több fizetős csomag, custom kártyaűrlap, referral- vagy reklámrendszer, és nem történt élő production charge.

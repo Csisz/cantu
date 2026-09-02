@@ -21,6 +21,7 @@ const errorCopy: Record<AnalysisErrorCode, string> = {
   unauthenticated: "Az elemzéshez jelentkezz be.",
   not_configured: "A nyelvi elemzés nincs beállítva ezen a környezeten.",
   rate_limited: "Most elérted a rövid idejű elemzési korlátot. Próbáld később.",
+  quota_exceeded: "Erre a hónapra elfogyott az AI-elemzési kereted. A mentett tanulásaid és az ismétlés továbbra is elérhető.",
   provider_unavailable: "Az elemzés átmenetileg nem érhető el. A forrásod megmaradt ezen az oldalon.",
   provider_timeout: "Az elemzés túl sokáig tartott. Próbáld újra.",
   invalid_provider_response: "Az elemzés nem adott biztonságosan használható eredményt. Próbáld újra.",
@@ -138,7 +139,7 @@ export function LearningPreview({ source, onStartOver, authenticated }: {
         <h2 id="analysis-error-title">A forrásod nem veszett el.</h2>
         <p className={styles.inlineError} role="alert">{errorCopy[view.code]}</p>
         <div className={styles.confirmationActions}>
-          <button className={styles.mainAction} type="button" onClick={analyze}>Újrapróbálom</button>
+          {view.code === "quota_exceeded" ? <a className={styles.mainAction} href="/pricing">Cantu Plus</a> : <button className={styles.mainAction} type="button" onClick={analyze}>Újrapróbálom</button>}
           <button className={styles.secondaryAction} type="button" onClick={onStartOver}>Másik forrást hozok</button>
         </div>
       </section>

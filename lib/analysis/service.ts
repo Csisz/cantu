@@ -31,6 +31,7 @@ export async function analyzeVerifiedSource(
   request: AnalysisRequest,
   provider: LanguageAnalysisProvider,
   signal?: AbortSignal,
+  reserveUsage?: () => Promise<"reserved" | "rate_limited" | "quota_exceeded" | "unavailable">,
 ): Promise<CompletedLearningAnalysis> {
   if (auth.status !== "authenticated") throw new AnalysisError("unauthenticated");
   const source = verifiedLearningSourceSchema.parse({
@@ -69,6 +70,14 @@ export async function analyzeVerifiedSource(
   }
 
   if (!persistence.attemptId) throw new AnalysisError("analysis_in_progress");
+  if (reserveUsage) {
+    const reservation = await reserveUsage();
+    if (reservation !== "reserved") {
+      const normalized = new AnalysisError(reservation === "rate_limited" ? "rate_limited" : reservation === "quota_exceeded" ? "quota_exceeded" : "provider_unavailable");
+      await failLearningAnalysis(auth, { sessionId: persistence.sessionId, attemptId: persistence.attemptId, latencyMs: 0, errorCode: normalized.code });
+      throw normalized;
+    }
+  }
   const startedAt = performance.now();
   try {
     let providerResult = await provider.analyze(source, { signal });

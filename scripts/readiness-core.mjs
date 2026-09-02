@@ -7,8 +7,10 @@ const REQUIRED_FILES = [
   "docs/public-beta/PRIVACY_NOTICE_DRAFT.md", "docs/public-beta/TERMS_DRAFT.md",
   "docs/public-beta/SECURITY_CHECKLIST.md", "docs/public-beta/LEGAL_LAUNCH_CHECKLIST.md",
   "public/robot.png", "supabase/migrations/20260901120000_milestone_11_public_beta_hardening.sql",
+  "app/pricing/page.tsx", "docs/billing/STRIPE_RUNBOOK.md",
+  "supabase/migrations/20260901180000_milestone_12_billing_entitlements.sql",
 ];
-const MOCK_FLAGS = ["CANTU_E2E_AUTH_MOCK", "CANTU_E2E_STT_MOCK", "CANTU_E2E_ANALYSIS_MOCK", "CANTU_E2E_PRACTICE_MOCK"];
+const MOCK_FLAGS = ["CANTU_E2E_AUTH_MOCK", "CANTU_E2E_STT_MOCK", "CANTU_E2E_ANALYSIS_MOCK", "CANTU_E2E_PRACTICE_MOCK", "CANTU_E2E_BILLING_MOCK"];
 
 export function evaluateReadiness({ root, env, production = false }) {
   const results = [];
@@ -27,6 +29,21 @@ export function evaluateReadiness({ root, env, production = false }) {
     const missing = !env[name]?.trim();
     results.push({ level: production && missing ? "BLOCK" : missing ? "WARN" : "PASS", message: `${name} ${missing ? "is not configured" : "is configured"}` });
   }
+  const billingMode = env.CANTU_BILLING_MODE?.trim() || "disabled";
+  if (!["disabled", "test", "live"].includes(billingMode)) {
+    results.push({ level: "BLOCK", message: "CANTU_BILLING_MODE is invalid" });
+  } else if (billingMode === "disabled") {
+    results.push({ level: "WARN", message: "Billing is disabled; Cantu runs as a Free-only product" });
+  } else {
+    for (const name of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "STRIPE_PRICE_ID_CANTU_PLUS", "CANTU_PLUS_PRICE_LABEL"]) {
+      const missing = !env[name]?.trim();
+      results.push({ level: missing ? "BLOCK" : "PASS", message: `${name} ${missing ? "is required for enabled billing" : "is configured"}` });
+    }
+    const secretKey = env.STRIPE_SECRET_KEY?.trim() || "";
+    const incoherent = billingMode === "test" ? secretKey.startsWith("sk_live_") : secretKey.startsWith("sk_test_");
+    results.push({ level: incoherent ? "BLOCK" : "PASS", message: incoherent ? "Stripe key mode conflicts with CANTU_BILLING_MODE" : "Stripe key mode is coherent where detectable" });
+  }
+  results.push({ level: "WARN", message: "Stripe tax, VAT, invoicing, refund and accounting decisions require manual review" });
   results.push({ level: "WARN", message: "Professional legal and provider contractual review cannot be automated" });
   try {
     const tracked = execFileSync("git", ["ls-files"], { cwd: root, encoding: "utf8" }).split(/\r?\n/).filter(Boolean);

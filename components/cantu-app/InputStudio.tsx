@@ -30,6 +30,7 @@ const transcriptionErrorCopy: Record<TranscriptionErrorCode, string> = {
   transcription_failed: "Az átírás most nem sikerült. Próbáld újra.",
   provider_unavailable: "Az átíró szolgáltatás átmenetileg nem elérhető. Próbáld később.",
   rate_limited: "Most elérted a rövid idejű átírási korlátot. Próbáld később.",
+  quota_exceeded: "Erre a hónapra elfogyott a hangfelismerési kereted. A helyi hangkijelölés továbbra is használható.",
   not_configured: "Az átírás nincs beállítva ezen a környezeten.",
   unauthenticated: "Az átíráshoz jelentkezz be.",
 };
@@ -168,7 +169,7 @@ export function InputStudio({
           <h2 id="transcription-error-title">Próbáljuk meg újra?</h2>
           <p className={styles.inlineError} role="alert">{transcriptionErrorCopy[transcription.code]}</p>
           <div className={styles.confirmationActions}>
-            <button className={styles.mainAction} type="button" onClick={() => processClip(transcription.clip)}>Újrapróbálom</button>
+            {transcription.code === "quota_exceeded" ? <a className={styles.mainAction} href="/pricing">Cantu Plus</a> : <button className={styles.mainAction} type="button" onClick={() => processClip(transcription.clip)}>Újrapróbálom</button>}
             <button className={styles.secondaryAction} type="button" onClick={() => setTranscription({ status: "idle" })}>Másik részletet választok</button>
           </div>
         </section>

@@ -2,7 +2,7 @@ import { ZodError } from "zod";
 import { analyzeVerifiedSource } from "@/lib/analysis/service";
 import { analysisRequestSchema } from "@/lib/analysis/validation";
 import { getAuthContext } from "@/lib/data/auth";
-import { consumePaidUsage } from "@/lib/data/usage";
+import { reserveProviderUsage } from "@/lib/data/usage";
 import { createLanguageAnalysisProvider } from "@/lib/providers/analysis/factory";
 import { AnalysisError, type AnalysisErrorCode } from "@/lib/providers/analysis/types";
 import { PUBLIC_BETA_LIMITS } from "@/lib/security/limits";
@@ -17,6 +17,7 @@ const statusByCode: Record<AnalysisErrorCode, number> = {
   unauthenticated: 401,
   not_configured: 503,
   rate_limited: 429,
+  quota_exceeded: 402,
   provider_unavailable: 503,
   provider_timeout: 504,
   invalid_provider_response: 502,
@@ -52,10 +53,12 @@ export async function POST(request: Request) {
     if (exceedsDeclaredBodyLimit(request, PUBLIC_BETA_LIMITS.jsonRequestBytes)) {
       throw new AnalysisError("invalid_source");
     }
-    if (!(await consumePaidUsage(auth.user.id, "analysis"))) throw new AnalysisError("rate_limited");
     const input = analysisRequestSchema.parse(await request.json());
     const provider = createLanguageAnalysisProvider();
-    return Response.json(await analyzeVerifiedSource(auth, input, provider, request.signal));
+    return Response.json(await analyzeVerifiedSource(auth, input, provider, request.signal, async () => {
+      const usage = await reserveProviderUsage(auth.user.id, "analysis");
+      return usage.allowed ? "reserved" : usage.reason === "duplicate_request" ? "rate_limited" : usage.reason;
+    }));
   } catch (error) {
     return errorResponse(error);
   }

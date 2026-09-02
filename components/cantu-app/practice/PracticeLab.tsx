@@ -24,6 +24,7 @@ export function PracticeLab({ suggestedTargets }: { suggestedTargets: PracticePr
   const [draft, setDraft] = useState("");
   const [hintOpen, setHintOpen] = useState(false);
   const [message, setMessage] = useState("");
+  const [quotaExhausted, setQuotaExhausted] = useState(false);
   const [outcomes, setOutcomes] = useState<PracticeOutcome[]>([]);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const feedbackRef = useRef<HTMLDivElement>(null);
@@ -42,9 +43,11 @@ export function PracticeLab({ suggestedTargets }: { suggestedTargets: PracticePr
     if (phase === "starting") return;
     setPhase("starting");
     setMessage("");
+    setQuotaExhausted(false);
     const response = await startPracticeScenario(selectedScenario);
     if (response.status === "error") {
       setMessage(response.message);
+      setQuotaExhausted(response.code === "quota_exceeded");
       setPhase("choose");
       return;
     }
@@ -59,9 +62,11 @@ export function PracticeLab({ suggestedTargets }: { suggestedTargets: PracticePr
     if (!session?.stateToken || !draft.trim() || phase === "sending") return;
     setPhase("sending");
     setMessage("");
+    setQuotaExhausted(false);
     const response = await submitPracticeResponse(session.stateToken, draft);
     if (response.status === "error") {
       setMessage(response.message);
+      setQuotaExhausted(response.code === "quota_exceeded");
       setPhase("answer");
       return;
     }
@@ -115,6 +120,7 @@ export function PracticeLab({ suggestedTargets }: { suggestedTargets: PracticePr
           {phase === "starting" ? "Előkészítem a helyzetet…" : "Kezdem a gyakorlást"}
         </button>
         <p className={styles.persistenceStatus} role="status">{message}</p>
+        {quotaExhausted ? <Link className={styles.lessonSecondaryLink} href="/pricing">Cantu Plus</Link> : null}
       </section>
     );
   }
@@ -200,6 +206,7 @@ export function PracticeLab({ suggestedTargets }: { suggestedTargets: PracticePr
           </div>
         ) : null}
         <p className={styles.persistenceStatus} role="status">{message}</p>
+        {quotaExhausted ? <Link className={styles.lessonSecondaryLink} href="/pricing">Cantu Plus</Link> : null}
       </article>
     </section>
   );

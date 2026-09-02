@@ -22,6 +22,7 @@ const statusByCode: Record<PracticeErrorCode, number> = {
   duplicate_request: 409,
   not_configured: 503,
   rate_limited: 429,
+  quota_exceeded: 402,
   provider_unavailable: 503,
   provider_timeout: 504,
   invalid_provider_response: 502,

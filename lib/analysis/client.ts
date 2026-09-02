@@ -7,6 +7,7 @@ const knownCodes = new Set<AnalysisErrorCode>([
   "unauthenticated",
   "not_configured",
   "rate_limited",
+  "quota_exceeded",
   "provider_unavailable",
   "provider_timeout",
   "invalid_provider_response",

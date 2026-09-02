@@ -1,42 +1,34 @@
 import "server-only";
 
 import { randomUUID } from "node:crypto";
-import { isE2EAnalysisMockEnabled, isE2EPracticeMockEnabled, isE2ESTTMockEnabled } from "@/lib/env/server";
-import { PUBLIC_BETA_LIMITS, type GuardedOperation } from "@/lib/security/limits";
+import { reserveE2EUsage } from "@/lib/billing/e2e-store";
+import { PLAN_ENTITLEMENTS } from "@/lib/billing/plans";
+import { isE2EAuthMockEnabled } from "@/lib/env/server";
+import { RATE_LIMIT_INVENTORY, type GuardedOperation } from "@/lib/security/limits";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { consumePracticeNonce, consumePracticeRateLimit } from "@/lib/practice/rate-limit";
 
-export async function consumePracticeUsage(userId: string, nonce: string = randomUUID()) {
-  if (isE2EPracticeMockEnabled()) {
-    return consumePracticeNonce(nonce) && consumePracticeRateLimit(userId);
-  }
-  const admin = createAdminClient();
-  const { data, error } = await admin.rpc("consume_private_usage", {
-    p_user_id: userId,
-    p_operation: "practice",
-    p_request_nonce: nonce,
-    p_limit: PUBLIC_BETA_LIMITS.practiceTurnsPerHour,
-  });
-  if (error) throw new Error("Practice usage guard unavailable");
-  return data === true;
+export type UsageReservation = { allowed: boolean; reason: "reserved" | "rate_limited" | "quota_exceeded" | "duplicate_request" | "unavailable"; plan?: "free" | "plus"; used?: number; limit?: number };
+
+export function isProviderOperationDisabled(operation: GuardedOperation) {
+  return process.env[`CANTU_DISABLE_${operation === "practice" ? "PRACTICE" : operation.toUpperCase()}`] === "true";
 }
 
-const limitByOperation: Record<GuardedOperation, number> = {
-  transcription: PUBLIC_BETA_LIMITS.transcriptionPerHour,
-  analysis: PUBLIC_BETA_LIMITS.analysisPerHour,
-  pronunciation: PUBLIC_BETA_LIMITS.pronunciationPerHour,
-  practice: PUBLIC_BETA_LIMITS.practiceTurnsPerHour,
-};
-
-export async function consumePaidUsage(userId: string, operation: Exclude<GuardedOperation, "practice">, nonce = randomUUID()) {
-  if (isE2ESTTMockEnabled() || isE2EAnalysisMockEnabled() || isE2EPracticeMockEnabled()) return true;
+export async function reserveProviderUsage(userId: string, operation: GuardedOperation, nonce: string = randomUUID()): Promise<UsageReservation> {
+  if (isProviderOperationDisabled(operation)) return { allowed: false, reason: "unavailable" };
+  const hourlyLimit = RATE_LIMIT_INVENTORY[operation].limit;
+  if (isE2EAuthMockEnabled()) return reserveE2EUsage(userId, operation, nonce, hourlyLimit);
   const admin = createAdminClient();
-  const { data, error } = await admin.rpc("consume_private_usage", {
+  const { data, error } = await admin.rpc("reserve_entitled_usage", {
     p_user_id: userId,
     p_operation: operation,
     p_request_nonce: nonce,
-    p_limit: limitByOperation[operation],
+    p_hourly_limit: hourlyLimit,
+    p_free_monthly_limit: PLAN_ENTITLEMENTS.free.monthly[operation],
+    p_plus_monthly_limit: PLAN_ENTITLEMENTS.plus.monthly[operation],
   });
-  if (error) throw new Error("Usage guard unavailable");
-  return data === true;
+  if (error || !data || typeof data !== "object" || Array.isArray(data)) return { allowed: false, reason: "unavailable" };
+  const row = data as Record<string, unknown>;
+  const reason = row.reason;
+  if (reason !== "reserved" && reason !== "rate_limited" && reason !== "quota_exceeded" && reason !== "duplicate_request") return { allowed: false, reason: "unavailable" };
+  return { allowed: row.allowed === true, reason, plan: row.plan === "plus" ? "plus" : "free", used: typeof row.used === "number" ? row.used : undefined, limit: typeof row.limit === "number" ? row.limit : undefined };
 }

@@ -3,6 +3,7 @@ import { AppShell } from "@/components/cantu-app/AppShell";
 import { getAuthContext } from "@/lib/data/auth";
 import { getLearningHistory } from "@/lib/data/learning-sessions";
 import { getPhrasebookSnapshot } from "@/lib/data/review";
+import { getBillingSnapshot } from "@/lib/data/billing";
 import type { InputMode } from "@/lib/input/types";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ type AppPageProps = {
   searchParams: Promise<{
     mode?: string | string[];
     auth?: string | string[];
+    billing?: string | string[];
   }>;
 };
 
@@ -30,9 +32,12 @@ export default async function AppPage({ searchParams }: AppPageProps) {
         ? "A megerősítő link lejárt vagy érvénytelen. Kérj új levelet a regisztrációval."
         : undefined;
   const auth = await getAuthContext();
-  const [history, phrasebook] = await Promise.all([
+  const billingResult = Array.isArray(params.billing) ? params.billing[0] : params.billing;
+  const billingNotice = billingResult === "success" ? "Az előfizetés állapotát ellenőrizzük. A Plus a hiteles Stripe-visszajelzés után aktiválódik." : billingResult === "mock-checkout" ? "A teszt Checkout visszatért; a jogosultságot csak aláírt webhook aktiválhatja." : billingResult === "mock-portal" ? "Visszatértél a teszt ügyfélportálról." : undefined;
+  const [history, phrasebook, billing] = await Promise.all([
     getLearningHistory(auth),
     getPhrasebookSnapshot(auth),
+    getBillingSnapshot(auth),
   ]);
 
   return (
@@ -41,7 +46,8 @@ export default async function AppPage({ searchParams }: AppPageProps) {
       auth={auth}
       history={history}
       phrasebook={phrasebook}
-      authNotice={authNotice}
+      billing={billing}
+      authNotice={billingNotice ?? authNotice}
     />
   );
 }

@@ -15,6 +15,7 @@ const errorMessages: Record<string, string> = {
   duplicate_request: "Ezt a választ már elküldted.",
   not_configured: "A gyakorlási szolgáltató még nincs beállítva.",
   rate_limited: "Most sok gyakorlás indult. Tarts egy rövid szünetet, majd próbáld újra.",
+  quota_exceeded: "Erre a hónapra elfogyott a Practice Lab AI-kereted. A mentett kifejezéseid és az ismétlés továbbra is elérhető.",
   provider_timeout: "A válasz most túl sokáig tartott. Próbáld újra.",
   provider_unavailable: "A gyakorlópartner most nem érhető el. A mentett kifejezéseid megmaradtak.",
   invalid_provider_response: "A gyakorlóválasz most nem volt használható. Próbáld újra.",

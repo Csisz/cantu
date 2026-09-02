@@ -12,6 +12,7 @@ const errorCodes = new Set([
   "too_long",
   "session_not_found",
   "feedback_rate_limited",
+  "quota_exceeded",
   "feedback_not_configured",
   "feedback_timeout",
   "feedback_failed",
@@ -50,4 +51,3 @@ export async function requestPronunciationFeedback(input: {
   if (!parsed.success) throw new PronunciationFeedbackError("feedback_failed");
   return parsed.data;
 }
-

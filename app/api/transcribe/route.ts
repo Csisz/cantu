@@ -1,5 +1,5 @@
 import { getAuthContext } from "@/lib/data/auth";
-import { consumePaidUsage } from "@/lib/data/usage";
+import { reserveProviderUsage } from "@/lib/data/usage";
 import { createSpeechToTextProvider } from "@/lib/providers/speech/factory";
 import { TranscriptionError, type TranscriptionErrorCode } from "@/lib/providers/speech/types";
 import { transcribeValidatedClip } from "@/lib/transcription/service";
@@ -19,6 +19,7 @@ const statusByCode: Record<TranscriptionErrorCode, number> = {
   too_large: 413,
   too_long: 400,
   rate_limited: 429,
+  quota_exceeded: 402,
   not_configured: 503,
   provider_unavailable: 503,
   transcription_failed: 502,
@@ -51,8 +52,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    if (!(await consumePaidUsage(auth.user.id, "transcription"))) throw new TranscriptionError("rate_limited");
     const clip = await validateTranscriptionFormData(await request.formData());
+    const usage = await reserveProviderUsage(auth.user.id, "transcription");
+    if (!usage.allowed) throw new TranscriptionError(usage.reason === "quota_exceeded" ? "quota_exceeded" : usage.reason === "unavailable" ? "provider_unavailable" : "rate_limited");
     const provider = createSpeechToTextProvider();
     const result = await transcribeValidatedClip(auth, clip, provider, request.signal);
     return Response.json({
